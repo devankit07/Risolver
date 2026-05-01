@@ -1,0 +1,20 @@
+{
+  "name": "@resolver/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "build": "node -e \"console.log('backend: JS source, no compile step')\"",
+    "start": "node src/index.js",
+    "lint": "echo \"no linter configured yet\""
+  },
+  "dependencies": {
+    "@resolver/ui": "workspace:*",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.19.1",
+    "socket.io": "^4.8.1"
+  }
+}
