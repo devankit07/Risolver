@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "strict": false,
+    "noEmit": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "baseUrl": "."
+  },
+  "include": ["src/**/*", "tailwind.preset.js"],
+  "exclude": ["node_modules", "dist"]
+}
