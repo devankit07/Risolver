@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "strict": false,
+    "noEmit": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@resolver/ui": ["../../packages/ui/src/index.js"],
+      "@resolver/ui/styles.css": ["../../packages/ui/src/styles/styles.css"],
+      "@resolver/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
+}
