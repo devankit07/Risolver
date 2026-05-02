@@ -1,30 +1,22 @@
-import { incidentSchema } from '@resolver/ui/schemas/incident'
-import cors from 'cors'
-import express from 'express'
+import express from "express";
+import cookieParser from "cookie-parser";
+import authRouter from "./routes/auth.routes.js";
+import inviteRouter from "./routes/invite.route.js";
+import incidentRouter from "./routes/incident.route.js";
+import teamRouter from "./routes/team.routes.js";
+import aiRouter from "./routes/ai.routes.js";
+import organizationRouter from "./routes/organization.route.js";
 
-export function createApp() {
-  const app = express()
-  app.use(cors({ origin: true, credentials: true }))
-  app.use(express.json())
+const app = express();
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'resolver-backend' })
-  })
+app.use(cookieParser());
+app.use(express.json());
 
-  app.get('/api/incidents/example', (_req, res) => {
-    const demo = incidentSchema.safeParse({
-      id: 'inc_demo_001',
-      title: 'Staging latency spike',
-      status: 'acknowledged',
-      orgId: 'org_demo',
-      updatedAt: new Date().toISOString(),
-    })
-    if (!demo.success) {
-      res.status(500).json({ error: 'schema_mismatch', issues: demo.error.flatten() })
-      return
-    }
-    res.json(demo.data)
-  })
+app.use('/api/auth', authRouter);
+app.use('/api/invite', inviteRouter);
+app.use('/api/incident', incidentRouter);
+app.use('/api/team', teamRouter);
+app.use('/api/ai', aiRouter);
+app.use('/api/organization', organizationRouter);
 
-  return app
-}
+export default app;
