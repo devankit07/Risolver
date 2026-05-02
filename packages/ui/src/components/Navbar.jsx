@@ -84,7 +84,7 @@ export function Navbar() {
             Register
           </button>
           <NavLink
-            to="/pricing"
+            to="/contact"
             className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
           >
             contact us
