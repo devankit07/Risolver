@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { KpiCard, TeamMemberRow } from '@resolver/ui'
+import { Bell } from 'lucide-react'
 
 const COL_HEADS = ['Name', 'Role', 'Status', 'Incidents this week', 'Last active', 'Actions']
 
 export default function Team() {
   const navigate = useNavigate()
-  const { members, loading } = useSelector((s) => s.team)
+  const { members = [], loading = false } = useSelector((s) => s?.team || {})
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
 
@@ -25,7 +26,31 @@ export default function Team() {
   const totalIncidents = members.reduce((sum, m) => sum + (m.incidentsThisWeek ?? 0), 0)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="bg-[#f9f9ff] font-body-md text-on-background selection:bg-primary-container selection:text-on-primary-container w-full h-full relative overflow-hidden flex flex-col">
+      <style>{`
+        /* Hide the parent layout's AppTopbar and padding to prevent duplicate headers */
+        .flex.min-h-0.min-w-0.flex-1.flex-col > .shrink-0.px-4 {
+          display: none !important;
+        }
+        main.min-h-0.flex-1 {
+          padding: 0 !important;
+        }
+      `}</style>
+      <header className="h-16 shrink-0 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between px-6 w-full z-30">
+        <div className="flex items-center gap-8">
+          <h2 className="text-base font-semibold text-gray-900">Team Management</h2>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="p-2 text-gray-500 hover:bg-surface-container-low rounded-full transition-all flex items-center justify-center">
+            <Bell className="w-5 h-5" />
+          </button>
+          <div className="h-8 w-8 rounded-full overflow-hidden ml-2 border border-outline-variant">
+            <img alt="User profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmzHDJwxcgo49OYkINmlK-_wLsw2M-IYee6zxS8r-e3Z_uPugjDWv_mHur-ptWDAvh6XgtENuc1LtCAuI5fzsrHgvPDQFGp_aa1suzN-j_WyXg4ztb0DFuWBxjh0IK8Fd1J_TP5ljctMSEgHYhdIrCO8J0NlUY336L0LXuoSEqEKV1A3cnmZUbgg5hsUnuPpEELpc9x-jA9EoHMAB0lBecLwbnfiWqkWuPATxeqzvijPbb1-KlLkRUNdG8hEDuVKo0t9_bpgPux9lH"/>
+          </div>
+        </div>
+      </header>
+      <div className="p-6 flex-1 overflow-auto">
+        <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard variant="light" label="Total members" value={members.length} valueColor="#0f172a" />
         <KpiCard variant="light" label="Online now" value={onlineCount} sublabel="Available" valueColor="#4f46e5" />
@@ -100,6 +125,8 @@ export default function Team() {
             )}
           </tbody>
         </table>
+      </div>
+        </div>
       </div>
     </div>
   )
