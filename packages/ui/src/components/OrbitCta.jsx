@@ -64,10 +64,15 @@ export function OrbitCta({
             transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
           />
 
-          <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-3xl bg-indigo-600 text-white shadow-[0_16px_35px_rgba(79,70,229,0.35)]">
-            <svg className="size-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V4H2v16h5m10 0v-4a3 3 0 00-3-3H10a3 3 0 00-3 3v4m10 0H7m5-12a3 3 0 110 6 3 3 0 010-6z" />
-            </svg>
+          <div className="relative z-10 flex w-[min(100%,300px)] items-center justify-center rounded-[28px] bg-white px-5 py-4 shadow-[0_16px_40px_rgba(79,70,229,0.28)] ring-1 ring-indigo-100">
+            <img
+              src="/logo.png"
+              alt="Resolver"
+              width={320}
+              height={80}
+              className="h-auto w-full max-h-28 object-contain object-center"
+              decoding="async"
+            />
           </div>
 
           {[

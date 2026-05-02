@@ -18,7 +18,9 @@ export default defineConfig({
     strictPort: false,
     fs: { allow: [path.resolve(dirname, '../../')] },
   },
+  /* Do not pre-bundle workspace @resolver/ui — Vite's dep scan drops lucide re-exports from the barrel. */
   optimizeDeps: {
-    include: ['@resolver/ui', 'socket.io-client', 'framer-motion', 'gsap'],
+    exclude: ['@resolver/ui'],
+    include: ['lucide-react', 'socket.io-client', 'framer-motion', 'gsap'],
   },
 })

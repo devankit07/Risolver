@@ -29,10 +29,8 @@ export const adminRegisterValidation = [
     .trim()
     .notEmpty()
     .withMessage("Name is required")
-    .isLength({ min: 3, max: 50 })
-    .withMessage("Name must be 3-50 characters")
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage("Name should only contain letters"),
+    .isLength({ min: 2, max: 60 })
+    .withMessage("Name must be 2-60 characters"),
 
   body("email")
     .trim()
@@ -40,31 +38,20 @@ export const adminRegisterValidation = [
     .withMessage("Email is required")
     .isEmail()
     .withMessage("Invalid email format")
-    .normalizeEmail()
-    .isLength({ max: 100 })
+    .isLength({ max: 120 })
     .withMessage("Email too long"),
 
   body("password")
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ min: 8, max: 30 })
-    .withMessage("Password must be 8-30 characters")
-    .matches(/[a-z]/)
-    .withMessage("Must contain lowercase letter")
-    .matches(/[A-Z]/)
-    .withMessage("Must contain uppercase letter")
-    .matches(/[0-9]/)
-    .withMessage("Must contain a number")
-    .matches(/[@$!%*?&]/)
-    .withMessage("Must contain a special character"),
+    .isLength({ min: 8, max: 72 })
+    .withMessage("Password must be at least 8 characters"),
 
   body("organizationName")
     .notEmpty()
     .withMessage("Organization name is required")
-    .isLength({ min: 3, max: 50 })
-    .withMessage("Organization name must be 3-50 characters")
-    .matches(/^[a-zA-Z0-9\s&.,'-]+$/)
-    .withMessage("Organization name contains invalid characters"),
+    .isLength({ min: 2, max: 80 })
+    .withMessage("Organization name must be 2-80 characters"),
 
   validation,
 ];
@@ -74,36 +61,23 @@ export const inviteRegisterValidation = [
     .trim()
     .notEmpty()
     .withMessage("Name is required")
-    .isLength({ min: 3, max: 50 })
-    .withMessage("Name must be 3-50 characters")
-    .matches(/^[a-zA-Z\s]+$/)
-    .withMessage("Name should only contain letters"),
+    .isLength({ min: 2, max: 60 })
+    .withMessage("Name must be 2-60 characters"),
 
   body("email")
     .trim()
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
-    .withMessage("Invalid email format")
-    .normalizeEmail()
-    .isLength({ max: 100 })
-    .withMessage("Email too long"),
+    .withMessage("Invalid email format"),
 
   body("password")
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ min: 8, max: 30 })
-    .withMessage("Password must be 8-30 characters")
-    .matches(/[a-z]/)
-    .withMessage("Must contain lowercase letter")
-    .matches(/[A-Z]/)
-    .withMessage("Must contain uppercase letter")
-    .matches(/[0-9]/)
-    .withMessage("Must contain a number")
-    .matches(/[@$!%*?&]/)
-    .withMessage("Must contain a special character"),
+    .isLength({ min: 8, max: 72 })
+    .withMessage("Password must be at least 8 characters"),
 
-    validation
+  validation,
 ];
 
 export const loginValidation = [
@@ -112,14 +86,13 @@ export const loginValidation = [
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
-    .withMessage("Please provide a valid email")
-    .normalizeEmail(),
+    .withMessage("Please provide a valid email"),
 
   body("password")
     .notEmpty()
     .withMessage("Password is required"),
 
-    validation
+  validation,
 ];
 
 

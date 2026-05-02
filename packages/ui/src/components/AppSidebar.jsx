@@ -12,32 +12,40 @@ const NAV = [
 ]
 
 /**
- * @param {{ user?: { name: string, email?: string } }} props
+ * @param {{ user?: { name: string, email?: string }, logoSrc?: string }} props
  */
-export function AppSidebar({ user }) {
+export function AppSidebar({ user, logoSrc = '/favi.png' }) {
   const { pathname } = useLocation()
 
   return (
     <aside
-      className="hidden md:flex flex-col shrink-0 z-40 w-[248px] min-h-screen sticky top-0 rounded-tr-[28px] shadow-lg shadow-indigo-950/10 overflow-hidden"
+      className="hidden md:flex h-screen w-[248px] shrink-0 flex-col overflow-hidden z-40 rounded-tr-[28px] shadow-lg shadow-indigo-950/10"
       style={{ background: SIDEBAR_BG }}
     >
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 pt-6 pb-5">
-        <span
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white/95 text-[#4338ca] font-bold text-sm shadow-sm"
-          aria-hidden
-        >
-          R
-        </span>
-        <div className="flex flex-col min-w-0">
-          <span className="text-[15px] font-bold tracking-tight text-white leading-tight">Resolver</span>
-          <span className="text-[11px] text-white/70 truncate">Incident response</span>
+      {/* Brand — small favicon tile (same footprint as previous “R”), large wordmark */}
+      <div className="flex shrink-0 items-center gap-2.5 px-5 pt-6 pb-5">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/95 p-0.5 shadow-sm ring-1 ring-white/35">
+          <img
+            src={logoSrc}
+            alt=""
+            width={36}
+            height={36}
+            className="h-full w-full object-contain"
+            decoding="async"
+          />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="text-[1.625rem] font-extrabold leading-[1.05] tracking-tight text-white md:text-[1.875rem]">
+            Resolver
+          </span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75 md:text-xs">
+            Incident response
+          </span>
         </div>
       </div>
 
-      {/* Box-style nav (ref: Goodle-style stacked cards) */}
-      <nav className="flex flex-col gap-2.5 px-3 flex-1 pb-4">
+      {/* Box-style nav */}
+      <nav className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain px-3 pb-4">
         {NAV.map(({ to, label, icon: Icon, prefix }) => (
           <NavLink
             key={to}

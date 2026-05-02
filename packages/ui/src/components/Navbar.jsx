@@ -1,15 +1,111 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { NavLink } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { LogOut, ChevronDown, Shield, Tag } from 'lucide-react'
 
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/docs', label: 'Docs' },
   { to: '/pricing', label: 'Pricing' },
-  { to: '/about', label: 'About ' },
+  { to: '/contact', label: 'Contact' },
+  { to: '/about', label: 'About' },
 ]
 
-export function Navbar() {
+function initials(name = '') {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('')
+}
+
+/** Avatar dropdown shown when user is logged in */
+function UserMenu({ user, onLogout }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const roleLabel = user.role === 'admin' ? 'Admin' : user.role ?? 'Member'
+  const tag = user.role === 'admin' ? 'Creator' : 'Responder'
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1.5 pl-2 pr-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+      >
+        {/* avatar circle */}
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+          {initials(user.name)}
+        </span>
+        <span className="hidden max-w-[100px] truncate sm:block">{user.name.split(' ')[0]}</span>
+        <ChevronDown size={14} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+          >
+            {/* User info header */}
+            <div className="border-b border-slate-100 px-4 py-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
+                  {initials(user.name)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+                  <p className="truncate text-[11px] text-slate-500">{user.email}</p>
+                </div>
+              </div>
+              {/* role + tag badges */}
+              <div className="mt-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
+                  <Shield size={10} />
+                  {roleLabel}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  <Tag size={10} />
+                  {tag}
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="p-2">
+              <button
+                type="button"
+                onClick={() => { setOpen(false); onLogout?.() }}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+              >
+                <LogOut size={16} />
+                Log out
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/**
+ * @param {{ user?: { name: string, email: string, role: string } | null, onLogout?: () => void }} props
+ */
+export function Navbar({ user, onLogout }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -23,9 +119,7 @@ export function Navbar() {
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = ''
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   return (
@@ -38,59 +132,64 @@ export function Navbar() {
             : 'bg-transparent',
         ].join(' ')}
       >
-        <NavLink
-          to="/"
-          className="flex items-center gap-1.5 font-semibold"
-          aria-label="Resolver — home"
-        >
-          <span className="select-none text-lg leading-none tracking-tight">
-            <span className="text-[var(--resolver-red)]">RE</span>
-            <span className="text-[var(--accent-green)]">solver</span>
-          </span>
+        <NavLink to="/" className="flex shrink-0 items-center" aria-label="Resolver — home">
+          <img
+            src="/logo.png"
+            alt="Resolver"
+            width={320}
+            height={72}
+            className="h-11 w-auto max-h-12 max-w-[min(72vw,320px)] object-contain object-left sm:h-12 sm:max-h-14 md:h-14"
+            decoding="async"
+          />
         </NavLink>
 
         <ul className="hidden items-center gap-9 md:flex">
           {navLinks.map(({ to, label }) => (
             <li key={to + label}>
-              {to.includes('#') ? (
-                <a
-                  href={to}
-                  className="text-[15px] font-medium text-slate-600 transition hover:text-slate-900"
-                  onClick={() => setOpen(false)}
-                >
-                  {label}
-                </a>
-              ) : (
-                <NavLink
-                  end={to === '/'}
-                  to={to}
-                  className={({ isActive }) =>
-                    [
-                      'text-[15px] font-medium transition',
-                      isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900',
-                    ].join(' ')
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  {label}
-                </NavLink>
-              )}
+              <NavLink
+                end={to === '/'}
+                to={to}
+                className={({ isActive }) =>
+                  ['text-[15px] font-medium transition', isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'].join(' ')
+                }
+                onClick={() => setOpen(false)}
+              >
+                {label}
+              </NavLink>
             </li>
           ))}
         </ul>
 
+        {/* Desktop right */}
         <div className="hidden items-center gap-3 md:flex">
-          <button type="button" className="text-sm font-semibold text-slate-600 hover:text-slate-900">
-            Register
-          </button>
-          <NavLink
-            to="/contact"
-            className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-          >
-            contact us
-          </NavLink>
+          {user ? (
+            <>
+              <NavLink
+                to="/contact"
+                className={({ isActive }) =>
+                  ['text-sm font-semibold transition', isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'].join(' ')
+                }
+              >
+                Contact
+              </NavLink>
+              <UserMenu user={user} onLogout={onLogout} />
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className="text-sm font-semibold text-slate-600 transition hover:text-slate-900">
+                Sign in
+              </NavLink>
+              <NavLink
+                to="/register"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+              >
+                Register
+              </NavLink>
+            </>
+          )}
         </div>
 
+        {/* Mobile hamburger */}
         <button
           type="button"
           className="inline-flex rounded-lg border border-slate-300 p-2 text-slate-800 md:hidden"
@@ -121,38 +220,49 @@ export function Navbar() {
           >
             <div className="flex flex-col gap-1 px-6 py-4">
               {navLinks.map(({ to, label }) => (
-                <div key={`m-${label}`}>
-                  {to.includes('#') ? (
-                    <a
-                      href={to}
-                      className="block py-3 text-slate-600 hover:text-slate-900"
-                      onClick={() => setOpen(false)}
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <NavLink
-                      end={to === '/'}
-                      to={to}
-                      className="block py-3 text-slate-600 hover:text-slate-900"
-                      onClick={() => setOpen(false)}
-                    >
-                      {label}
-                    </NavLink>
-                  )}
-                </div>
+                <NavLink
+                  key={`m-${label}`}
+                  end={to === '/'}
+                  to={to}
+                  className="block py-3 text-slate-600 hover:text-slate-900"
+                  onClick={() => setOpen(false)}
+                >
+                  {label}
+                </NavLink>
               ))}
               <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4">
-                <button type="button" className="w-full py-3 text-sm font-semibold text-slate-600">
-                  Sign in
-                </button>
-                <NavLink
-                  to="/pricing"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
-                >
-                  Get started
-                </NavLink>
+                {user ? (
+                  <>
+                    <div className="flex items-center gap-3 py-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
+                        {initials(user.name)}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{user.name}</p>
+                        <p className="text-xs text-slate-500">{user.role} · {user.role === 'admin' ? 'Creator' : 'Responder'}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); onLogout?.() }}
+                      className="flex w-full items-center gap-2 rounded-xl border border-rose-200 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                    >
+                      <LogOut size={16} className="ml-3" />
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <NavLink to="/login" onClick={() => setOpen(false)}
+                      className="w-full py-3 text-center text-sm font-semibold text-slate-600 hover:text-slate-900">
+                      Sign in
+                    </NavLink>
+                    <NavLink to="/register" onClick={() => setOpen(false)}
+                      className="inline-flex w-full items-center justify-center rounded-full bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
+                      Register
+                    </NavLink>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

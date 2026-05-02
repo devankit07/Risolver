@@ -50,7 +50,14 @@ export function Footer() {
         <div className="grid min-w-[1120px] grid-cols-[220px_1fr_1fr_1fr_1fr] items-start gap-10">
           <div>
             <Link to="/" className="inline-flex items-center" aria-label="Resolver — home">
-              <img src="/fav.png" alt="" width={30} height={30} className="size-8 shrink-0 object-contain" />
+              <img
+                src="/logo.png"
+                alt="Resolver"
+                width={360}
+                height={84}
+                className="h-14 w-auto max-w-[min(100%,320px)] object-contain object-left sm:h-16 md:h-[4.5rem]"
+                decoding="async"
+              />
             </Link>
             <p className="mt-12 text-sm leading-relaxed text-slate-800">
               © 2026 Resolver Technology Ltd.

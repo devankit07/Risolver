@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    jobTitle: {
+        type: String,
+        default: null
+    },
     organizationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Organization',

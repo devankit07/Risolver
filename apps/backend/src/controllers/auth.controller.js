@@ -7,50 +7,46 @@ import { generateToken } from "../utils/generateTokens.js";
 import { sendResponse } from "../utils/response.js";
 
 export const adminRegister = async (req, res) => {
-  const { name, email, password, organizationName } = req.body;
+  const { name, email, password, organizationName, jobTitle } = req.body;
 
   const alreadyExists = await userModel.findOne({ email });
-
   if (alreadyExists) {
-    sendResponse(res, 409, false, "Email already exists");
+    sendResponse(res, 409, false, "An account with this email already exists");
     return;
   }
 
-  const organization = await organizationModel.create({
-    name: organizationName,
-  });
-  const organizationId = organization._id;
+  const organization = await organizationModel.create({ name: organizationName });
 
   const user = await userModel.create({
     name,
     email,
     password,
-    organizationId: organizationId,
+    organizationId: organization._id,
     role: "admin",
+    jobTitle: jobTitle || null,
   });
 
-  generateToken(user, res, "User registered successfully");
+  /* pass org name so the frontend gets it in the first response */
+  generateToken(user, res, "Account created successfully", organization.name);
 };
 
 export const registerWithInvite = async (req, res) => {
   const { name, email, password, token } = req.body;
 
   const alreadyExists = await userModel.findOne({ email });
-
   if (alreadyExists) {
-    sendResponse(res, 409, false, "Email already exists");
+    sendResponse(res, 409, false, "An account with this email already exists");
     return;
   }
 
   try {
     jwt.verify(token, config.JWT_SECRET);
-  } catch (err) {
-    sendResponse(res, 400, false, "Invalid invite token");
+  } catch {
+    sendResponse(res, 400, false, "Invalid or expired invite link");
     return;
   }
 
   const invite = await inviteModel.findOne({ token });
-
   if (!invite) {
     sendResponse(res, 404, false, "Invite not found");
     return;
@@ -65,67 +61,59 @@ export const registerWithInvite = async (req, res) => {
     specialization: invite.specialization ?? null,
   });
 
+  const org = await organizationModel.findById(invite.organizationId).lean();
+
   invite.isused = true;
   await invite.save();
 
-  sendResponse(res, 201, true, "User registered successfully", {
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      organizationId: user.organizationId,
-      specialization: user.specialization,
-      role: user.role,
-    },
-  });
+  generateToken(user, res, "Account created successfully", org?.name ?? null);
 };
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userModel.findOne({ email });
-
   if (!user) {
-    sendResponse(res, 401, false, "Invalid credentials");
+    sendResponse(res, 401, false, "Invalid email or password");
     return;
   }
 
   const isMatch = await user.comparePassword(password);
-
   if (!isMatch) {
-    sendResponse(res, 401, false, "Invalid credentials");
+    sendResponse(res, 401, false, "Invalid email or password");
     return;
   }
 
-  generateToken(user, res, "User logged in successfully");
+  /* look up org so we can return its name */
+  const org = user.organizationId
+    ? await organizationModel.findById(user.organizationId).lean()
+    : null;
+
+  generateToken(user, res, "Logged in successfully", org?.name ?? null);
 };
 
 export const getMe = async (req, res) => {
-  const user = req.user;
+  const { user } = req;
 
-  sendResponse(res, 200, true, "User details fetched successfully", {
+  const org = user.organizationId
+    ? await organizationModel.findById(user.organizationId).lean()
+    : null;
+
+  sendResponse(res, 200, true, "User fetched successfully", {
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
       organizationId: user.organizationId,
+      organizationName: org?.name ?? null,
       role: user.role,
+      jobTitle: user.jobTitle ?? null,
     },
   });
 };
 
 export const logout = async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    // increment tokenVersion to invalidate existing tokens
-    await userModel.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
-
-    // clear cookie
-    res.clearCookie("token");
-
-    sendResponse(res, 200, true, "User logged out successfully");
-  } catch (err) {
-    sendResponse(res, 500, false, "Failed to logout");
-  }
+  await userModel.findByIdAndUpdate(req.user._id, { $inc: { tokenVersion: 1 } });
+  res.clearCookie("token");
+  sendResponse(res, 200, true, "Logged out successfully");
 };

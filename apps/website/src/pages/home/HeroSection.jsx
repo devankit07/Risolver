@@ -2,9 +2,13 @@ import gsap from 'gsap'
 import { motion } from 'framer-motion'
 import { useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
+
+const MANAGE_URL = import.meta.env.VITE_MANAGE_URL || 'http://localhost:3001'
 
 export default function HeroSection() {
   const heroWordsRef = useRef(null)
+  const { user } = useAuth()
 
   useLayoutEffect(() => {
     const root = heroWordsRef.current
@@ -64,18 +68,41 @@ export default function HeroSection() {
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            to="/pricing"
-            className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
-          >
-            Get started free
-          </Link>
-          <a
-            href="#features"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-          >
-            See how it works
-          </a>
+          {user ? (
+            /* ── logged-in CTAs ── */
+            <>
+              <a
+                href={MANAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
+              >
+                Access your dashboard ↗
+              </a>
+              <Link
+                to="/docs"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                View docs
+              </Link>
+            </>
+          ) : (
+            /* ── logged-out CTAs ── */
+            <>
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
+              >
+                Register
+              </Link>
+              <Link
+                to="/docs"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                See how it works
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -101,13 +128,19 @@ export default function HeroSection() {
             </span>
           </div>
 
-          <div className="grid md:grid-cols-[200px_1fr]">
+          <div className="grid md:grid-cols-[minmax(220px,240px)_1fr]">
 
             {/* ── sidebar ── */}
             <aside className="border-r border-slate-100 bg-gradient-to-b from-indigo-600 to-indigo-500 p-4 text-white">
-              <div className="mb-5 flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 text-xs font-bold">R</span>
-                <span className="text-sm font-semibold">Resolver</span>
+              <div className="mb-5 flex items-center">
+                <img
+                  src="/logo.png"
+                  alt=""
+                  width={240}
+                  height={54}
+                  className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)] sm:h-11 md:h-12"
+                  decoding="async"
+                />
               </div>
               <ul className="space-y-0.5 text-[13px]">
                 {[

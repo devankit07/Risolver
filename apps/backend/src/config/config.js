@@ -37,4 +37,9 @@ export const config = {
   JWT_SECRET: process.env.JWT_SECRET,
   NODE_ENV: process.env.NODE_ENV,
   GROQ_API_KEY: process.env.GROQ_API_KEY || "",
+  CONTACT_RECEIVER: process.env.CONTACT_RECEIVER || "ankit.dev600@gmail.com",
+  SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+  SMTP_PORT: process.env.SMTP_PORT || "587",
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASS: process.env.SMTP_PASS || "",
 };
