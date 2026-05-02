@@ -3,8 +3,16 @@ import { config } from "../config/config.js";
 import userModel from "../models/user.model.js";
 import { sendResponse } from "../utils/response.js";
 
+function extractBearerToken(req) {
+  const header = req.headers?.authorization;
+  if (header?.startsWith("Bearer ")) {
+    return header.slice(7).trim();
+  }
+  return req.cookies?.token;
+}
+
 export const authenticateUser = async (req, res, next) => {
-  const token = req.cookies?.token;
+  const token = extractBearerToken(req);
 
   if (!token) {
     return sendResponse(res, 401, false, "Unauthorized. token missing");

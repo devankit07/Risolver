@@ -20,6 +20,7 @@ export const generateToken = (user, res, message) => {
   });
 
   sendResponse(res, 200, true, message, {
+    token,
     user: {
       id: user._id,
       name: user.name,
