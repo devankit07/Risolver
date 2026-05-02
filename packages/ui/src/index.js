@@ -15,3 +15,19 @@ export { PageShell } from './components/PageShell.jsx'
 export { OrbitCta } from './components/OrbitCta.jsx'
 export { FaqAccordion } from './components/FaqAccordion.jsx'
 export { incidentSchema, incidentUpdateSchema } from './schemas/incident.js'
+
+/* ── App shell ── */
+export { AppSidebar } from './components/AppSidebar.jsx'
+export { AppTopbar } from './components/AppTopbar.jsx'
+
+/* ── App components ── */
+export { Avatar } from './components/Avatar.jsx'
+export { KpiCard } from './components/KpiCard.jsx'
+export { StatusBadge } from './components/StatusBadge.jsx'
+export { IncidentRow } from './components/IncidentRow.jsx'
+export { TeamMemberRow } from './components/TeamMemberRow.jsx'
+export { AiTriageCard } from './components/AiTriageCard.jsx'
+export { PostmortemGenerator } from './components/PostmortemGenerator.jsx'
+export { TimelineItem } from './components/TimelineItem.jsx'
+export { MessageBubble } from './components/MessageBubble.jsx'
+export { PublicReportCard } from './components/PublicReportCard.jsx'

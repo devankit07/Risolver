@@ -2,7 +2,17 @@ import Groq from "groq-sdk";
 import { config } from "../config/config.js";
 import incidentUpdateModel from "../models/incidentUpdate.model.js";
 
-const groq = new Groq({ apiKey: config.GROQ_API_KEY });
+let groqClient = null;
+
+function getGroq() {
+  if (!config.GROQ_API_KEY?.trim()) {
+    throw new Error("GROQ_API_KEY is not configured — add it to .env for AI features");
+  }
+  if (!groqClient) {
+    groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
+  }
+  return groqClient;
+}
 
 export const generateIncidentSuggestion = async (userInput) => {
   const response = await groq.chat.completions.create({
@@ -49,6 +59,7 @@ Input: ${userInput}`,
 };
 
 export const generateIncidentSeverity = async (title, description) => {
+  const groq = getGroq();
   const response = await groq.chat.completions.create({
     model: "llama-3.1-8b-instant",
     messages: [
@@ -91,6 +102,7 @@ export const generatePostmortem = async (incidentId) => {
         return `Time: ${update.createdAt}\nStatus: ${update.status}\nMessage: ${update.message}\nPosted by: ${update.postedBy}\n\n`;
     }).join("\n");
 
+    const groq = getGroq();
     const response = await groq.chat.completions.create({
         model: "llama-3.1-8b-instant",
         messages: [
