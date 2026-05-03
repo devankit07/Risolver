@@ -25,9 +25,9 @@ const CONFIG_LIGHT = {
   low:           { label: 'Low',           bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
   published:     { label: 'Published',     bg: '#eef2ff', color: '#3730a3', border: '#c7d2fe' },
   draft:         { label: 'Draft',         bg: '#f1f5f9', color: '#0f172a', border: '#cbd5e1' },
-  online:        { label: 'Online',        bg: '#eef2ff', color: '#3730a3', border: '#c7d2fe' },
-  offline:       { label: 'Offline',       bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' },
-  away:          { label: 'Away',          bg: '#f8fafc', color: '#475569', border: '#cbd5e1' },
+  online:        { label: 'Online',        bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
+  offline:       { label: 'Offline',       bg: '#f9fafb', color: '#4b5563', border: '#e5e7eb' },
+  away:          { label: 'Away',          bg: '#fffbeb', color: '#d97706', border: '#fef3c7' },
 }
 
 /**

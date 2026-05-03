@@ -16,12 +16,12 @@ export const fetchTeam = createAsyncThunk('team/fetchAll', async (_, { rejectWit
 })
 
 const DEMO_MEMBERS = [
-  { id: 'u1', name: 'Alex Kim',    role: 'Admin',    status: 'online',  email: 'alex@resolver.io',  incidentsThisWeek: 8,  lastActive: 'Now' },
-  { id: 'u2', name: 'Sara Patel',  role: 'Engineer', status: 'online',  email: 'sara@resolver.io',  incidentsThisWeek: 5,  lastActive: 'Now' },
-  { id: 'u3', name: 'James Lee',   role: 'DevOps',   status: 'away',    email: 'james@resolver.io', incidentsThisWeek: 3,  lastActive: '15m ago' },
-  { id: 'u4', name: 'Priya Nair',  role: 'Manager',  status: 'online',  email: 'priya@resolver.io', incidentsThisWeek: 12, lastActive: 'Now' },
-  { id: 'u5', name: 'Tom Wick',    role: 'Engineer', status: 'offline', email: 'tom@resolver.io',   incidentsThisWeek: 2,  lastActive: '2h ago' },
-  { id: 'u6', name: 'Nia Brooks',  role: 'Viewer',   status: 'offline', email: 'nia@resolver.io',   incidentsThisWeek: 0,  lastActive: '1d ago' },
+  { id: 'u1', name: 'Alex Kim',    role: 'Admin',    status: 'online',  email: 'alex@resolver.io',  incidentsThisWeek: 8,  lastActive: 'Now', joinedOn: 'Jan 10, 2024', department: 'IT', emailVerified: true },
+  { id: 'u2', name: 'Sara Patel',  role: 'Engineer', status: 'online',  email: 'sara@resolver.io',  incidentsThisWeek: 5,  lastActive: 'Now', joinedOn: 'Feb 05, 2024', department: 'Engineering', emailVerified: true },
+  { id: 'u3', name: 'James Lee',   role: 'DevOps',   status: 'away',    email: 'james@resolver.io', incidentsThisWeek: 3,  lastActive: '15m ago', joinedOn: 'Mar 12, 2024', department: 'DevOps', emailVerified: false },
+  { id: 'u4', name: 'Priya Nair',  role: 'Manager',  status: 'online',  email: 'priya@resolver.io', incidentsThisWeek: 12, lastActive: 'Now', joinedOn: 'Dec 18, 2023', department: 'Operations', emailVerified: true },
+  { id: 'u5', name: 'Tom Wick',    role: 'Engineer', status: 'offline', email: 'tom@resolver.io',   incidentsThisWeek: 2,  lastActive: '2h ago', joinedOn: 'Apr 22, 2024', department: 'Engineering', emailVerified: true },
+  { id: 'u6', name: 'Nia Brooks',  role: 'Viewer',   status: 'offline', email: 'nia@resolver.io',   incidentsThisWeek: 0,  lastActive: '1d ago', joinedOn: 'May 01, 2024', department: 'Support', emailVerified: false },
 ]
 
 const teamSlice = createSlice({

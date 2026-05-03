@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { KpiCard, TeamMemberRow } from '@resolver/ui'
 import { Bell } from 'lucide-react'
 
-const COL_HEADS = ['Name', 'Role', 'Status', 'Incidents this week', 'Last active', 'Actions']
+const COL_HEADS = ['Name', 'Role', 'Status', 'Incidents this week', 'Last active', 'Joined on', 'Department', 'Email verified', 'Actions']
 
 export default function Team() {
   const navigate = useNavigate()
@@ -78,7 +78,7 @@ export default function Team() {
         </select>
         <button
           type="button"
-          className="h-10 px-4 rounded-xl text-[13px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca] shrink-0"
+          className="h-10 px-3 rounded-lg text-[12px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca] shrink-0"
         >
           + Invite member
         </button>
@@ -108,7 +108,7 @@ export default function Team() {
               ))
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-slate-400 text-[13px]">
+                <td colSpan={9} className="py-16 text-center text-slate-400 text-[13px]">
                   No team members found
                 </td>
               </tr>

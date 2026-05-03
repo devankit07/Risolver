@@ -52,13 +52,13 @@ export default function ReportDetail() {
         <div className="flex-1" />
         <button
           type="button"
-          className="h-9 px-4 rounded-lg text-[12px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+          className="h-7 px-3 rounded-lg text-[11px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
         >
           Share
         </button>
         <button
           type="button"
-          className="h-9 px-4 rounded-lg text-[12px] font-semibold border border-slate-200 bg-white text-slate-700 hover:border-[#4f46e5]/40"
+          className="h-7 px-3 rounded-lg text-[11px] font-semibold border border-slate-200 bg-white text-slate-700 hover:border-[#4f46e5]/40"
         >
           ↓ PDF
         </button>
