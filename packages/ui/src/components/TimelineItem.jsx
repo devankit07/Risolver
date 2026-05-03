@@ -28,38 +28,38 @@ export function TimelineItem({ item, isLast = false, variant = 'dark' }) {
   const TYPE = light ? TYPE_LIGHT : TYPE_DARK
   const color = TYPE[item.type?.toLowerCase()] ?? (light ? '#cbd5e1' : '#555')
   const isAi = item.isAi || item.type?.toLowerCase() === 'ai'
-  const line = light ? '#e2e8f0' : '#1a1a1a'
-  const aiBg = light ? '#eef2ff' : '#534AB722'
-  const aiBorder = light ? '#c7d2fe' : '#534AB744'
-  const aiBadge = light ? '#4f46e5' : '#534AB7'
-  const meta = light ? '#64748b' : '#555'
-  const authorC = light ? '#475569' : '#888'
-  const body = light ? '#0f172a' : '#f0f0f0'
+  const line = light ? '#f1f5f9' : '#1a1a1a'
+  const meta = light ? '#94a3b8' : '#555'
+  const authorC = light ? '#64748b' : '#888'
+  const body = light ? '#334155' : '#f0f0f0'
 
   return (
-    <div className="flex gap-3 relative">
-      {!isLast && (
-        <span className="absolute left-[7px] top-6 bottom-0 w-px" style={{ background: line }} />
-      )}
-      <span
-        className={`w-3.5 h-3.5 rounded-full mt-0.5 shrink-0 ring-2 ${light ? 'ring-white' : 'ring-[#0d0d0d]'}`}
-        style={{ background: color }}
-      />
-      <div
-        className={`flex-1 pb-4 rounded-lg p-3 ${isAi ? 'border' : ''}`}
-        style={isAi ? { background: aiBg, borderColor: aiBorder } : {}}
-      >
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="text-[10px]" style={{ color: meta }}>{item.timestamp}</span>
-          {item.author && <Avatar name={item.author} size={16} />}
-          {item.author && <span className="text-[11px]" style={{ color: authorC }}>{item.author}</span>}
-          {isAi && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style={{ background: aiBadge }}>
+    <div className="flex gap-4 relative">
+      <div className="flex flex-col items-center shrink-0 w-4">
+        <span
+          className={`w-3.5 h-3.5 rounded-full z-10 ring-4 ${light ? 'ring-white' : 'ring-[#0d0d0d]'}`}
+          style={{ background: color }}
+        />
+        {!isLast && (
+          <div className="w-px flex-1 mt-1" style={{ background: line }} />
+        )}
+      </div>
+      <div className="flex-1 pb-6">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[12px] font-medium" style={{ color: meta }}>{item.timestamp}</span>
+          {isAi ? (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-100">
               AI
             </span>
-          )}
+          ) : item.author ? (
+            <div className="flex items-center gap-1.5">
+               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                {item.author.split(' ').map(n => n[0]).join('')}
+              </span>
+            </div>
+          ) : null}
         </div>
-        <p className="text-[13px] leading-relaxed" style={{ color: body }}>
+        <p className="text-[13px] leading-relaxed font-normal" style={{ color: body }}>
           {item.content}
         </p>
       </div>

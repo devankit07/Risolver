@@ -6,14 +6,14 @@ const COL_HEADS = ['Title', 'ID', 'Severity', 'Status', 'Service', 'Assignees', 
 
 export default function Incidents() {
   const navigate = useNavigate()
-  const { list: incidents, loading } = useSelector((s) => s.incidents)
+  const { list: incidents, loading } = useSelector((/** @type {any} */ s) => s.incidents)
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium" style={{ color: '#f0f0f0' }}>All incidents</span>
         <button
-          className="h-8 px-3 rounded-md text-[12px] font-medium"
+          className="h-7 px-2.5 rounded-md text-[22px] font-medium"
           style={{ background: '#00e87a', color: '#000' }}
         >
           + New incident
