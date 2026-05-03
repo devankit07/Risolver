@@ -5,7 +5,7 @@ import { MessageBubble, Avatar } from '@resolver/ui'
 
 export default function Messages() {
   const dispatch = useDispatch()
-  const { conversations, activeConversationId } = useSelector((s) => s.messages)
+  const { conversations, activeConversationId } = useSelector((/** @type {any} */ s) => s.messages)
   const activeConv = conversations.find((c) => c.id === activeConversationId)
   const [draft, setDraft] = useState('')
   const feedRef = useRef(null)
@@ -29,7 +29,7 @@ export default function Messages() {
           <span className="text-[14px] font-semibold text-[#0f172a]">Messages</span>
           <button
             type="button"
-            className="h-8 px-3 rounded-lg text-[11px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+            className="h-7 px-2.5 rounded-lg text-[10px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
           >
             + New
           </button>
@@ -118,7 +118,7 @@ export default function Messages() {
             <button
               type="button"
               onClick={send}
-              className="h-10 px-4 rounded-lg text-[13px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+              className="h-8 px-3 rounded-lg text-[12px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
             >
               Send
             </button>

@@ -1,5 +1,6 @@
 import { Avatar } from './Avatar.jsx'
 import { StatusBadge } from './StatusBadge.jsx'
+import { CheckCircle2, XCircle } from 'lucide-react'
 
 const ROLE_DARK = {
   admin:   { bg: '#00e87a22', color: '#00e87a', border: '#00e87a33' },
@@ -10,11 +11,11 @@ const ROLE_DARK = {
 }
 
 const ROLE_LIGHT = {
-  admin:   { bg: '#eef2ff', color: '#3730a3', border: '#c7d2fe' },
-  manager: { bg: '#eef2ff', color: '#312e81', border: '#c7d2fe' },
-  engineer:{ bg: '#f1f5f9', color: '#0f172a', border: '#e2e8f0' },
-  devops:  { bg: '#f1f5f9', color: '#0f172a', border: '#e2e8f0' },
-  viewer:  { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+  admin:   { bg: '#f5f3ff', color: '#6366f1', border: '#ddd6fe' },
+  manager: { bg: '#f5f3ff', color: '#6366f1', border: '#ddd6fe' },
+  engineer:{ bg: '#f9fafb', color: '#374151', border: '#e5e7eb' },
+  devops:  { bg: '#f9fafb', color: '#374151', border: '#e5e7eb' },
+  viewer:  { bg: '#f9fafb', color: '#374151', border: '#e5e7eb' },
 }
 
 /**
@@ -70,6 +71,29 @@ export function TeamMemberRow({ member, onClick, onViewProfile, variant = 'dark'
         <span className={`text-[11px] ${L ? 'text-slate-500' : ''}`} style={L ? undefined : { color: '#555' }}>
           {member.lastActive ?? '—'}
         </span>
+      </td>
+      <td className="py-3 px-2">
+        <span className={`text-[11px] ${L ? 'text-slate-500' : ''}`} style={L ? undefined : { color: '#888' }}>
+          {member.joinedOn ?? '—'}
+        </span>
+      </td>
+      <td className="py-3 px-2">
+        <span className={`text-[11px] ${L ? 'text-slate-500' : ''}`} style={L ? undefined : { color: '#888' }}>
+          {member.department ?? '—'}
+        </span>
+      </td>
+      <td className="py-3 px-2">
+        {member.emailVerified ? (
+          <div className="flex items-center gap-1.5 text-[11px] text-[#059669]">
+            <CheckCircle2 size={14} />
+            <span>Yes</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-[11px] text-[#dc2626]">
+            <XCircle size={14} />
+            <span>No</span>
+          </div>
+        )}
       </td>
       <td className="py-3 pl-2 pr-4">
         <button

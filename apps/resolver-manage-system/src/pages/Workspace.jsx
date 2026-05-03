@@ -2,8 +2,19 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { io } from 'socket.io-client'
-import { AiTriageCard, PostmortemGenerator, TimelineItem, StatusBadge, Avatar } from '@resolver/ui'
-import { triageIncident, generatePostmortem, updateRealtimeIncident } from '../store/incidentsSlice.js'
+import { StatusBadge, Avatar, TimelineItem } from '@resolver/ui'
+import { triageIncident, updateRealtimeIncident } from '../store/incidentsSlice.js'
+import { 
+  Sparkles, 
+  Zap, 
+  Send, 
+  RotateCcw, 
+  Paperclip, 
+  AtSign, 
+  ChevronRight,
+  MessageSquare,
+  AlertTriangle
+} from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173'
 const IN = '#4f46e5'
@@ -38,8 +49,9 @@ const UPDATE_TYPES = ['Update', 'Escalate', 'Note']
 export default function Workspace() {
   const { incidentId } = useParams()
   const navigate = useNavigate()
-  const dispatch = useDispatch()
-  const { list, triageLoading, triageData } = useSelector((s) => s.incidents)
+  /** @type {any} */
+  const dispatch = useDispatch();
+  const { list, triageLoading, triageData } = useSelector((/** @type {any} */ s) => s.incidents)
 
   const incident = list.find((i) => i.id === incidentId) ?? {
     id: incidentId,
@@ -72,7 +84,7 @@ export default function Workspace() {
     socket.on('incident:new', (payload) => {
       dispatch(updateRealtimeIncident(payload))
     })
-    return () => socket.disconnect()
+    return () => { socket.disconnect(); }
   }, [incidentId, dispatch])
 
   useEffect(() => {
@@ -80,7 +92,7 @@ export default function Workspace() {
   }, [timeline.length])
 
   function handleTriage() {
-    dispatch(triageIncident(incidentId))
+    dispatch(/** @type {any} */(triageIncident)(incidentId))
   }
 
   function postUpdate() {
@@ -98,172 +110,159 @@ export default function Workspace() {
 
   const sevColor = { critical: BK, high: IN, medium: IN, low: '#94a3b8' }
 
+  const [activeTab, setActiveTab] = useState('Update')
+
   return (
-    <div className="flex flex-col gap-0 -mx-1 min-h-[calc(100vh-6rem)] md:-mx-2">
-      {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-white shrink-0 rounded-t-xl shadow-sm">
-        <span className="text-[11px] font-mono px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 font-semibold">
-          {incident.id}
-        </span>
-        <span className="text-[15px] font-semibold flex-1 truncate text-[#0f172a]">{incident.title}</span>
-        <StatusBadge variant="light" status={incident.severity} />
-        <StatusBadge variant="light" status={incident.status} />
-        <button
-          type="button"
-          className="h-9 px-4 rounded-lg text-[12px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca] shrink-0"
-        >
-          Resolve incident
-        </button>
-        <button
-          type="button"
-          className="w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-        >
-          ···
-        </button>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row bg-slate-50/50 rounded-b-xl border border-t-0 border-slate-200 shadow-sm">
-        {/* LEFT — Problem (ref-3) */}
-        <div className="w-full lg:w-[280px] shrink-0 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col gap-3 p-4 overflow-y-auto bg-white">
-          <div>
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Problem</h2>
-            <AiTriageCard
-              variant="light"
-              summary={triage.summary}
-              suggestions={triage.suggestions}
-              generatedAt="2 min ago"
-              isLoading={triageLoading}
-            />
+    <div className="flex flex-col lg:flex-row gap-6 p-6 min-h-screen bg-[#fafbfc]">
+      {/* LEFT COLUMN */}
+      <div className="flex-1 flex flex-col gap-6">
+        
+        {/* Problem Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[14px] font-bold text-slate-800">Problem</h2>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[#4f46e5]">
+                <Sparkles size={12} fill="currentColor" className="opacity-80" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">AI Analysis</span>
+              </div>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleTriage}
-            className="w-full py-2 rounded-lg text-[12px] font-semibold border border-[#4f46e5]/30 text-[#4f46e5] bg-[#eef2ff] hover:bg-[#e0e7ff]"
-          >
-            {triageLoading ? 'Triaging…' : '↺ Re-triage with AI'}
-          </button>
-
-          <div>
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Details</h2>
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 flex flex-col gap-2.5">
-              <DetailRow label="Assignees">
-                <div className="flex items-center gap-1">
-                  {incident.assignees?.slice(0, 3).map((a) => <Avatar key={a} name={a} size={22} />) ?? null}
-                  <button type="button" className="text-[10px] ml-1 text-[#4f46e5] font-medium">
-                    + Add
-                  </button>
-                </div>
-              </DetailRow>
-              <DetailRow label="Service">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600">
-                  {incident.service ?? '—'}
-                </span>
-              </DetailRow>
-              <DetailRow label="Created">
-                <span className="text-[11px] text-slate-600">{incident.createdAt}</span>
-              </DetailRow>
-              <DetailRow label="Severity">
-                <span className="text-[11px] font-bold" style={{ color: sevColor[incident.severity] ?? '#64748b' }}>
-                  {incident.severity?.toUpperCase() ?? '—'}
-                </span>
-              </DetailRow>
+          <div className="p-5">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+              <ul className="flex flex-col gap-2.5">
+                {triage.summary.map((point, i) => (
+                  <li key={i} className="text-[13px] text-slate-600 leading-relaxed font-medium">
+                    {point}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
 
-        {/* CENTER — Solutions / timeline */}
-        <div className="flex-1 flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 min-h-[320px] lg:min-h-0 bg-white">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 shrink-0 bg-slate-50/80">
-            <div>
-              <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Solutions</h2>
-              <span className="text-[13px] font-semibold text-[#0f172a]">Live timeline</span>
+        {/* Solution Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[14px] font-bold text-slate-800">Solution</h2>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[#4f46e5]">
+                <Zap size={12} fill="currentColor" className="opacity-80" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">AI Suggested</span>
+              </div>
             </div>
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-[#4f46e5]">
-              <span className="w-2 h-2 rounded-full bg-[#4f46e5] animate-pulse" />
-              Live
-            </span>
           </div>
-
-          <div ref={feedRef} className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-1">
-            {timeline.length === 0 ? (
-              <p className="text-[13px] text-center mt-12 text-slate-400">No updates yet — post below</p>
-            ) : (
-              timeline.map((item, idx) => (
-                <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
-              ))
-            )}
+          <div className="p-5 flex flex-col gap-5">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+              <ul className="flex flex-col gap-2.5">
+                {triage.suggestions.map((point, i) => (
+                  <li key={i} className="text-[13px] text-slate-600 leading-relaxed font-medium">
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white text-[#4f46e5] text-[13px] font-bold hover:bg-indigo-50 transition-colors"
+              >
+                <Send size={16} />
+                Send Report
+              </button>
+              <button
+                type="button"
+                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold hover:bg-[#4338ca] transition-all shadow-md shadow-indigo-100"
+              >
+                <RotateCcw size={16} />
+                Reverify Code
+              </button>
+            </div>
           </div>
+        </div>
 
-          <div className="shrink-0 border-t border-slate-200 px-4 py-3 flex flex-col gap-2 bg-slate-50">
+        {/* Update / Input Section */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 p-2 bg-slate-50/50 border-b border-slate-100">
+            {['Update', 'Escalation', 'Note'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setUpdateType(tab)}
+                className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all ${
+                  updateType === tab 
+                    ? 'bg-indigo-50 text-[#4f46e5] border border-indigo-100' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="p-4">
             <textarea
-              rows={3}
+              rows={4}
               value={updateText}
               onChange={(e) => setUpdateText(e.target.value)}
-              placeholder="Add update, escalation, or note…"
-              className="w-full rounded-xl px-3 py-2 text-[13px] resize-none outline-none border border-slate-200 bg-white text-[#0f172a] placeholder:text-slate-400 focus:border-[#4f46e5] focus:ring-2 focus:ring-[#4f46e5]/15"
+              placeholder="Add update, escalation, or note..."
+              className="w-full text-[14px] text-slate-700 placeholder:text-slate-400 border-none outline-none resize-none focus:ring-0"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postUpdate()
               }}
             />
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex gap-1">
-                {UPDATE_TYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setUpdateType(t)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
-                      updateType === t
-                        ? 'bg-[#eef2ff] text-[#4f46e5] border-[#c7d2fe]'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
+            <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-50">
+              <div className="flex items-center gap-4 text-slate-400">
+                <button type="button" className="hover:text-slate-600 transition-colors">
+                  <Paperclip size={18} />
+                </button>
+                <button type="button" className="hover:text-slate-600 transition-colors">
+                  <AtSign size={18} />
+                </button>
               </div>
-              <div className="flex-1" />
               <button
                 type="button"
                 onClick={postUpdate}
-                className="h-9 px-5 rounded-lg text-[12px] font-semibold bg-[#4f46e5] text-white hover:bg-[#4338ca]"
+                className="h-10 px-6 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold hover:bg-[#4338ca] transition-all"
               >
                 Post
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* RIGHT — Postmortem + actions */}
-        <div className="w-full lg:w-[300px] shrink-0 flex flex-col gap-3 p-4 overflow-y-auto bg-white">
-          <PostmortemGenerator
-            variant="light"
-            incidentId={incidentId}
-            initialProblem={triage.summary?.[0] ?? ''}
-            onGenerate={async ({ problem, solution }) => {
-              const result = await dispatch(generatePostmortem({ id: incidentId, body: { problem, solution } }))
-              return result.payload?.postmortem
-            }}
-          />
+      {/* RIGHT COLUMN — Latest Incidents / Timeline */}
+      <div className="w-full lg:w-[380px] shrink-0">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col min-h-full">
+          <div className="px-6 py-5 border-b border-slate-100">
+            <h2 className="text-[15px] font-bold text-slate-800">Latest Incidents</h2>
+          </div>
+          
+          <div ref={feedRef} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-0">
+            {timeline.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                <MessageSquare size={32} className="opacity-20 mb-3" />
+                <p className="text-[13px]">No updates yet</p>
+              </div>
+            ) : (
+              timeline.map((item, idx) => (
+                <TimelineItem 
+                  key={item.id} 
+                  variant="light" 
+                  item={item} 
+                  isLast={idx === timeline.length - 1} 
+                />
+              ))
+            )}
+          </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 flex flex-col gap-2">
-            <span className="text-[12px] font-semibold text-[#0f172a]">Quick actions</span>
-            {['Add responder', 'Change severity', 'Link related incident'].map((label) => (
-              <button
-                key={label}
-                type="button"
-                className="w-full text-left py-2 px-3 rounded-lg text-[12px] border border-slate-200 bg-white text-slate-600 hover:border-[#4f46e5]/40"
-              >
-                {label}
-              </button>
-            ))}
+          <div className="px-6 py-4 border-t border-slate-100">
             <button
-              type="button"
-              onClick={() => navigate('/reports')}
-              className="w-full text-left py-2 px-1 text-[12px] font-medium text-[#4f46e5] hover:text-[#3730a3]"
+              onClick={() => navigate('/incidents')}
+              className="flex items-center gap-1.5 text-[13px] font-bold text-[#4f46e5] hover:gap-2 transition-all"
             >
-              View public status →
+              View all incidents
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
