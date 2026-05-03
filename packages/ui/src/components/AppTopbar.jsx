@@ -8,6 +8,7 @@ import { Search, Plus, Filter, Download, Bell, ChevronRight } from 'lucide-react
  *   mode?: 'welcome' | 'page',
  *   title?: string,
  *   welcomeName?: string,
+ *   welcomeOrganizationName?: string,
  *   subtitle?: string,
  *   breadcrumb?: string[],
  *   onSearch?: (v: string) => void,
@@ -20,6 +21,7 @@ export function AppTopbar({
   mode = 'page',
   title = 'Dashboard',
   welcomeName = 'there',
+  welcomeOrganizationName,
   subtitle,
   breadcrumb = [],
   onSearch,
@@ -74,10 +76,22 @@ export function AppTopbar({
             >
               {headline}
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500 md:text-[0.95rem]">
-              {mode === 'welcome'
-                ? formattedDate
-                : subtitle ?? 'Monitor incidents, your team, and response health.'}
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 md:text-[0.95rem]">
+              {mode === 'welcome' ? (
+                <>
+                  <span>{formattedDate}</span>
+                  {welcomeOrganizationName ? (
+                    <>
+                      <span className="text-slate-300" aria-hidden>
+                        ·
+                      </span>
+                      <span className="font-medium text-slate-600">{welcomeOrganizationName}</span>
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                subtitle ?? 'Monitor incidents, your team, and response health.'
+              )}
             </p>
           </div>
 

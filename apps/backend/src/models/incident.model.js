@@ -1,60 +1,88 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
+
+const timelineEntrySchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['update', 'escalation', 'note', 'ai', 'resolved'],
+      default: 'update',
+    },
+    content: { type: String, default: '' },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    isAI: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true },
+)
 
 const incidentSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
+    incidentId: { type: String, default: null },
+    title: { type: String, required: true },
+    description: { type: String, required: true },
     severity: {
       type: String,
       required: true,
-      enum: ["low", "medium", "high", "critical"],
+      enum: ['low', 'medium', 'high', 'critical'],
     },
     status: {
       type: String,
-      default: "open",
-      enum: ["open", 'assigned', "in_progress", "resolved"]
+      default: 'open',
+      enum: ['open', 'assigned', 'investigating', 'in_progress', 'resolved', 'closed'],
     },
-    affectedService: {
-      type: String,
-    },
+    service: { type: String, default: null },
+    affectedService: { type: String, default: null },
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
+      ref: 'Organization',
       required: true,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       default: null,
     },
-    assignedAt: {
-      type: Date,
-      default: null,
-    },
-    resolvedAt: {
-      type: Date,
-      default: null,
-    },
+    assignedAt: { type: Date, default: null },
+    resolvedAt: { type: Date, default: null },
     resolvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       default: null,
     },
+    timeline: { type: [timelineEntrySchema], default: [] },
+    aiTriage: {
+      summary: { type: [String], default: [] },
+      suggestions: { type: [String], default: [] },
+      generatedAt: { type: Date, default: null },
+    },
+    resolution: {
+      method: {
+        type: String,
+        enum: ['ai_solution', 'ai_suggestion', 'manual', null],
+        default: null,
+      },
+      content: { type: String, default: null },
+      githubUrl: { type: String, default: null },
+      resolvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+      },
+      resolvedAt: { type: Date, default: null },
+    },
+    /** Base64 data URLs (jpeg/png/webp/gif) uploaded with the report — text description can be omitted if images explain the issue */
+    reportImages: { type: [String], default: [] },
   },
   { timestamps: true },
-);
+)
 
-const incidentModel = mongoose.model("Incident", incidentSchema);
+incidentSchema.index({ organizationId: 1, createdAt: -1 })
+incidentSchema.index({ organizationId: 1, status: 1 })
 
-export default incidentModel;
+const incidentModel = mongoose.model('Incident', incidentSchema)
+export default incidentModel

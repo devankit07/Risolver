@@ -1,16 +1,44 @@
-import app from './src/app.js';
-import { connectDB } from './src/config/database.js';
-import { config } from './src/config/config.js';
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+import app from './src/app.js'
+import { connectDB } from './src/config/database.js'
+import { config } from './src/config/config.js'
 
-/* Connect to DB first, then start listening */
+const httpServer = createServer(app)
+
+const io = new Server(httpServer, {
+  cors: {
+    origin(origin, cb) {
+      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        cb(null, true)
+      } else {
+        cb(null, false)
+      }
+    },
+    credentials: true,
+  },
+})
+
+app.set('io', io)
+
+io.on('connection', (socket) => {
+  socket.on('join', ({ userId, orgId, role }) => {
+    if (orgId) socket.join(String(orgId))
+    if (userId) socket.join(`user:${String(userId)}`)
+    if (role) socket.join(`role:${String(role)}`)
+  })
+
+  socket.on('disconnect', () => {})
+})
+
 connectDB()
   .then(() => {
-    const port = Number(config.PORT);
-    app.listen(port, () => {
-      console.log(`🚀 Server is running on http://localhost:${port}`);
-    });
+    const port = Number(config.PORT)
+    httpServer.listen(port, () => {
+      console.log(`🚀 Server is running on http://localhost:${port}`)
+    })
   })
   .catch((err) => {
-    console.error("Fatal startup error:", err.message);
-    process.exit(1);
-  });
+    console.error('Fatal startup error:', err.message)
+    process.exit(1)
+  })

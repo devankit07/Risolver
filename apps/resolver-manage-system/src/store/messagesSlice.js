@@ -1,71 +1,206 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import api from '../services/api.js'
 
-const DEMO_CONVERSATIONS = [
-  {
-    id: 'c1',
-    name: 'Sara Patel',
-    preview: 'Check the DB connection logs — it looks like pool exhaustion',
-    timestamp: '4:18 AM',
-    unread: 2,
-    messages: [
-      { id: 'm1', author: 'Sara Patel', content: 'Hey, did you see INC-041? Gateway is timing out again.', timestamp: '4:10 AM', isOwn: false },
-      { id: 'm2', author: 'Me', content: 'Yeah, already looking into it. Could be pool exhaustion upstream.', timestamp: '4:12 AM', isOwn: true },
-      { id: 'm3', author: 'Sara Patel', content: 'Check the DB connection logs — it looks like pool exhaustion', timestamp: '4:18 AM', isOwn: false },
-    ],
-  },
-  {
-    id: 'c2',
-    name: 'Alex Kim',
-    preview: 'Postmortem for INC-038 is ready for review',
-    timestamp: '3:55 AM',
-    unread: 0,
-    messages: [
-      { id: 'm4', author: 'Alex Kim', content: 'Postmortem for INC-038 is ready for review', timestamp: '3:55 AM', isOwn: false },
-      { id: 'm5', author: 'Me', content: "Great, I'll take a look now.", timestamp: '3:58 AM', isOwn: true },
-    ],
-  },
-  {
-    id: 'c3',
-    name: 'Incident — INC-041',
-    preview: 'AI: Root cause identified — connection pool limit exceeded',
-    timestamp: '4:05 AM',
-    unread: 1,
-    messages: [
-      { id: 'm6', author: 'System', content: 'Root cause identified — connection pool limit exceeded under peak load.', timestamp: '4:05 AM', isOwn: false, isAi: true },
-      { id: 'm7', author: 'James Lee', content: 'Increasing pool size to 200 and restarting the service.', timestamp: '4:08 AM', isOwn: false },
-    ],
-  },
-]
+export const fetchThreads = createAsyncThunk('messages/fetchThreads', async (_, { rejectWithValue }) => {
+  try {
+    const res = await api.get('/messages/threads')
+    return res.data.data
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to fetch threads')
+  }
+})
+
+export const fetchThread = createAsyncThunk('messages/fetchThread', async (otherUserId, { rejectWithValue }) => {
+  try {
+    const res = await api.get(`/messages/thread/${otherUserId}`)
+    return { ...res.data.data, otherUserId }
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to fetch thread')
+  }
+})
+
+export const sendMessageThunk = createAsyncThunk('messages/send', async ({ receiverId, content, incidentRef }, { rejectWithValue }) => {
+  try {
+    const res = await api.post('/messages/send', { receiverId, content, incidentRef })
+    return res.data.data
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to send message')
+  }
+})
+
+export const fetchSearchUsers = createAsyncThunk('messages/searchUsers', async (search, { rejectWithValue }) => {
+  try {
+    const res = await api.get(`/messages/users?search=${encodeURIComponent(search ?? '')}`)
+    return res.data.data
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to search users')
+  }
+})
+
+export const fetchBroadcasts = createAsyncThunk('messages/fetchBroadcasts', async (_, { rejectWithValue }) => {
+  try {
+    const res = await api.get('/broadcasts')
+    return res.data.data
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to fetch broadcasts')
+  }
+})
+
+export const sendBroadcast = createAsyncThunk('messages/sendBroadcast', async ({ title, content, targetRoles }, { rejectWithValue }) => {
+  try {
+    const res = await api.post('/broadcasts', { title, content, targetRoles })
+    return res.data.data
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to send broadcast')
+  }
+})
+
+export const markBroadcastRead = createAsyncThunk('messages/markBroadcastRead', async (broadcastId, { rejectWithValue }) => {
+  try {
+    await api.patch(`/broadcasts/${broadcastId}/read`)
+    return broadcastId
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message ?? 'Failed to mark as read')
+  }
+})
 
 const messagesSlice = createSlice({
   name: 'messages',
   initialState: {
-    conversations: DEMO_CONVERSATIONS,
-    activeConversationId: 'c1',
+    threads: [],
+    activeThread: null,
+    activeThreadUserId: null,
+    broadcasts: [],
+    searchUsers: [],
+    loadingThreads: false,
+    loadingMessages: false,
+    loadingBroadcasts: false,
+    sendingMessage: false,
+    activeTab: 'threads',
+    conversations: [],
+    activeConversationId: null,
   },
   reducers: {
+    setActiveTab: (state, action) => {
+      state.activeTab = action.payload
+    },
+    setActiveThreadUserId: (state, action) => {
+      state.activeThreadUserId = action.payload
+    },
+    clearActiveThread: (state) => {
+      state.activeThread = null
+      state.activeThreadUserId = null
+    },
+    receiveMessage: (state, action) => {
+      const { message, threadId } = action.payload
+      if (state.activeThread && state.activeThreadUserId === String(message.sender?._id ?? message.sender)) {
+        state.activeThread.messages.push(message)
+      }
+      const idx = state.threads.findIndex((t) => t.threadId === threadId)
+      if (idx !== -1) {
+        state.threads[idx].lastMessage = { content: message.content, createdAt: message.createdAt, senderId: String(message.sender?._id ?? message.sender) }
+        state.threads[idx].unreadCount = (state.threads[idx].unreadCount ?? 0) + 1
+        const [thread] = state.threads.splice(idx, 1)
+        state.threads.unshift(thread)
+      }
+    },
+    addSentMessage: (state, action) => {
+      const { message, threadId } = action.payload
+      if (state.activeThread && state.activeThreadUserId) {
+        const isCurrentThread = state.activeThread.messages.some((m) => m.threadId === threadId) ||
+          String(state.activeThreadUserId) === String(message.receiver)
+        if (isCurrentThread) {
+          const exists = state.activeThread.messages.find((m) => String(m._id) === String(message._id))
+          if (!exists) state.activeThread.messages.push(message)
+        }
+      }
+      const idx = state.threads.findIndex((t) => t.threadId === threadId)
+      if (idx !== -1) {
+        state.threads[idx].lastMessage = { content: message.content, createdAt: message.createdAt, senderId: String(message.sender?._id ?? message.sender) }
+        const [thread] = state.threads.splice(idx, 1)
+        state.threads.unshift(thread)
+      }
+    },
+    markThreadRead: (state, action) => {
+      const threadId = action.payload
+      const idx = state.threads.findIndex((t) => t.threadId === threadId)
+      if (idx !== -1) state.threads[idx].unreadCount = 0
+    },
+    addBroadcast: (state, action) => {
+      const exists = state.broadcasts.find((b) => String(b._id) === String(action.payload._id))
+      if (!exists) state.broadcasts.unshift(action.payload)
+    },
+    clearSearchUsers: (state) => {
+      state.searchUsers = []
+    },
     setActiveConversation: (state, action) => {
       state.activeConversationId = action.payload
-      const conv = state.conversations.find((c) => c.id === action.payload)
-      if (conv) conv.unread = 0
     },
-    sendMessage: (state, action) => {
-      const { conversationId, content } = action.payload
-      const conv = state.conversations.find((c) => c.id === conversationId)
-      if (!conv) return
-      const msg = {
-        id: `m${Date.now()}`,
-        author: 'Me',
-        content,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isOwn: true,
-      }
-      conv.messages.push(msg)
-      conv.preview = content
-      conv.timestamp = msg.timestamp
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchThreads.pending, (s) => { s.loadingThreads = true })
+      .addCase(fetchThreads.fulfilled, (s, a) => {
+        s.loadingThreads = false
+        s.threads = a.payload?.threads ?? []
+      })
+      .addCase(fetchThreads.rejected, (s) => { s.loadingThreads = false })
+
+      .addCase(fetchThread.pending, (s) => { s.loadingMessages = true })
+      .addCase(fetchThread.fulfilled, (s, a) => {
+        s.loadingMessages = false
+        s.activeThread = { messages: a.payload?.messages ?? [], otherUser: a.payload?.otherUser ?? null }
+        s.activeThreadUserId = a.payload?.otherUserId ?? null
+        const threadId = s.threads.find((t) => String(t.otherUser?._id) === String(a.payload?.otherUserId))?.threadId
+        if (threadId) {
+          const idx = s.threads.findIndex((t) => t.threadId === threadId)
+          if (idx !== -1) s.threads[idx].unreadCount = 0
+        }
+      })
+      .addCase(fetchThread.rejected, (s) => { s.loadingMessages = false })
+
+      .addCase(sendMessageThunk.pending, (s) => { s.sendingMessage = true })
+      .addCase(sendMessageThunk.fulfilled, (s, a) => {
+        s.sendingMessage = false
+        if (s.activeThread) {
+          const exists = s.activeThread.messages.find((m) => String(m._id) === String(a.payload?.message?._id))
+          if (!exists && a.payload?.message) s.activeThread.messages.push(a.payload.message)
+        }
+      })
+      .addCase(sendMessageThunk.rejected, (s) => { s.sendingMessage = false })
+
+      .addCase(fetchSearchUsers.fulfilled, (s, a) => {
+        s.searchUsers = a.payload?.users ?? []
+      })
+
+      .addCase(fetchBroadcasts.pending, (s) => { s.loadingBroadcasts = true })
+      .addCase(fetchBroadcasts.fulfilled, (s, a) => {
+        s.loadingBroadcasts = false
+        s.broadcasts = a.payload?.broadcasts ?? []
+      })
+      .addCase(fetchBroadcasts.rejected, (s) => { s.loadingBroadcasts = false })
+
+      .addCase(sendBroadcast.fulfilled, (s, a) => {
+        if (a.payload?.broadcast) s.broadcasts.unshift({ ...a.payload.broadcast, isRead: true })
+      })
+
+      .addCase(markBroadcastRead.fulfilled, (s, a) => {
+        const idx = s.broadcasts.findIndex((b) => String(b._id) === String(a.payload))
+        if (idx !== -1) s.broadcasts[idx].isRead = true
+      })
   },
 })
 
-export const { setActiveConversation, sendMessage } = messagesSlice.actions
+export const {
+  setActiveTab,
+  setActiveThreadUserId,
+  clearActiveThread,
+  receiveMessage,
+  addSentMessage,
+  markThreadRead,
+  addBroadcast,
+  clearSearchUsers,
+  setActiveConversation,
+} = messagesSlice.actions
+
 export default messagesSlice.reducer

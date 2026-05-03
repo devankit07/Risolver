@@ -5,9 +5,22 @@ const organizationSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
+	slug: {
+		type: String,
+		default: null
+	},
+	createdBy: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'User',
+		default: null
+	},
 	specializations: {
 		type: [String],
 		default: ['Frontend', 'Backend', 'DevOps']
+	},
+	customRoles: {
+		type: [String],
+		default: []
 	}
 }, { timestamps: true });
 

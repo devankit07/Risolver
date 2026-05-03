@@ -1,18 +1,32 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-/** Display user for shell (sidebar / topbar). No login flow in manage-system. */
+/**
+ * Synced with website signup/login (`resolver_user` / `resolver_token`).
+ * User shape: { id, name, email, role, organizationName, organizationId, ... }
+ */
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: { name: 'Admin User', email: 'admin@resolver.io', role: 'Admin' },
+    user: null,
     token: null,
   },
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload
     },
+    setToken: (state, action) => {
+      state.token = action.payload
+    },
+    hydrateAuth: (state, action) => {
+      state.user = action.payload.user ?? null
+      state.token = action.payload.token ?? null
+    },
+    clearAuth: (state) => {
+      state.user = null
+      state.token = null
+    },
   },
 })
 
-export const { setUser } = authSlice.actions
+export const { setUser, setToken, hydrateAuth, clearAuth } = authSlice.actions
 export default authSlice.reducer

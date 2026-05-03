@@ -3,11 +3,18 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
 import inviteRouter from "./routes/invite.route.js";
+import inviteCredRouter from "./routes/inviteCredential.routes.js";
 import incidentRouter from "./routes/incident.route.js";
 import teamRouter from "./routes/team.routes.js";
 import aiRouter from "./routes/ai.routes.js";
 import organizationRouter from "./routes/organization.route.js";
 import contactRouter from "./routes/contact.routes.js";
+import dashboardRouter from "./routes/dashboard.routes.js";
+import userRouter from "./routes/user.routes.js";
+import messageRouter from "./routes/message.routes.js";
+import broadcastRouter from "./routes/broadcast.routes.js";
+import incidentsRouter from "./routes/incidents.routes.js";
+import postmortemsRouter from "./routes/postmortems.routes.js";
 
 const app = express();
 
@@ -37,11 +44,18 @@ app.use(express.json());
 /* ── Routes ── */
 app.use("/api/auth", authRouter);
 app.use("/api/invite", inviteRouter);
+app.use("/api/invites", inviteCredRouter);
 app.use("/api/incident", incidentRouter);
 app.use("/api/team", teamRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/organization", organizationRouter);
 app.use("/api/contact", contactRouter);
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/users", userRouter);
+app.use("/api/messages", messageRouter);
+app.use("/api/broadcasts", broadcastRouter);
+app.use("/api/incidents", incidentsRouter);
+app.use("/api/postmortems", postmortemsRouter);
 
 /* ── 404 ── */
 app.use((_req, res) => {

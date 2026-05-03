@@ -5,7 +5,6 @@ import { io } from 'socket.io-client'
 import {
   WorkspaceHeader,
   ResolutionMethodCard,
-  CommitItem,
   TimelineItem,
   AiTriageCard,
 } from '@resolver/ui'
@@ -13,17 +12,6 @@ import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
 import { updateRealtimeIncident } from '../store/incidentsSlice.js'
 
 const API = import.meta.env.VITE_API_URL ?? ''
-
-const DEMO_COMMITS = [
-  { hash: 'a1b2c3d', message: 'Increase pool size default to 200', author: 'Sara Patel', time: '2h ago' },
-  { hash: 'e4f5g6h', message: 'Add circuit breaker on checkout', author: 'James Lee', time: '4h ago' },
-]
-
-const DEMO_TIMELINE = [
-  { id: 't1', type: 'ai', timestamp: '4:02 AM', author: null, content: 'Incident auto-detected: elevated error rate.', isAi: true },
-  { id: 't2', type: 'escalation', timestamp: '4:05 AM', author: 'Alex Kim', content: 'Severity escalated to Critical.' },
-  { id: 't3', type: 'update', timestamp: '4:10 AM', author: 'Sara Patel', content: 'Investigating DB connection pool.' },
-]
 
 export default function Workspace() {
   const { incidentId } = useParams()
@@ -33,16 +21,16 @@ export default function Workspace() {
   const { list, triageLoading, triageData } = useSelector((/** @type {any} */ s) => s.incidents) // triageLoading drives AI card
 
   const incident = list.find((i) => i.id === incidentId) ?? {
-    id: incidentId,
-    title: 'Payment gateway 500 errors',
-    status: 'investigating',
-    severity: 'critical',
-    service: 'Payments',
-    assignees: ['Sara Patel'],
+    id: incidentId ?? '',
+    title: incidentId ? `Incident ${incidentId}` : 'Incident',
+    status: 'open',
+    severity: 'medium',
+    service: '—',
+    assignees: [],
     createdAt: '—',
   }
 
-  const [timeline, setTimeline] = useState(DEMO_TIMELINE)
+  const [timeline, setTimeline] = useState([])
   const [updateText, setUpdateText] = useState('')
   const [updateType, setUpdateType] = useState('Update')
   const [resolution, setResolution] = useState(null)
@@ -51,29 +39,17 @@ export default function Workspace() {
   const [repoAnalyzing, setRepoAnalyzing] = useState(false)
   const feedRef = useRef(null)
 
-  const triageDefaults = {
-    summary: [
-      'API Gateway experiencing timeout errors under peak load',
-      'PostgreSQL connection pool exhausted',
-      'Downstream services affected',
-    ],
-    suggestions: [
-      'Increase DB connection pool limit',
-      'Restart DB proxy after pool change',
-      'Enable read replicas for SELECT offload',
-    ],
-  }
   const rawTriage = triageData[incidentId]
   const triage = {
-    summary: Array.isArray(rawTriage?.summary) ? rawTriage.summary : triageDefaults.summary,
-    suggestions: Array.isArray(rawTriage?.suggestions) ? rawTriage.suggestions : triageDefaults.suggestions,
+    summary: Array.isArray(rawTriage?.summary) ? rawTriage.summary : [],
+    suggestions: Array.isArray(rawTriage?.suggestions) ? rawTriage.suggestions : [],
   }
 
   useEffect(() => {
     if (!API) return
     const socket = io(`${API}/incidents`, {
       transports: ['websocket'],
-      auth: { token: localStorage.getItem('token') ?? 'dev-admin-session' },
+      auth: { token: localStorage.getItem('resolver_token') ?? localStorage.getItem('token') ?? '' },
     })
     socket.emit('incident:subscribe', { incidentId })
     socket.on('incident:update', (payload) => {
@@ -132,7 +108,6 @@ export default function Workspace() {
             summary={triage.summary}
             suggestions={triage.suggestions}
             isLoading={triageLoading}
-            generatedAt="3 min ago"
           />
 
           {!resolved && (
@@ -210,9 +185,13 @@ export default function Workspace() {
             </button>
           </div>
           <div ref={feedRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            {timeline.map((item, idx) => (
-              <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
-            ))}
+            {timeline.length === 0 ? (
+              <p className="py-8 text-center text-[13px] text-[var(--text-secondary,#64748b)]">No timeline entries yet.</p>
+            ) : (
+              timeline.map((item, idx) => (
+                <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
+              ))
+            )}
           </div>
           <div className="border-t border-[var(--border,#e2e8f0)] p-3">
             <div className="mb-2 flex gap-2">
@@ -261,9 +240,7 @@ export default function Workspace() {
             </div>
             <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">from linked repository</p>
             <div className="mt-4 flex flex-col">
-              {DEMO_COMMITS.map((c) => (
-                <CommitItem key={c.hash} {...c} />
-              ))}
+              <p className="py-2 text-[13px] text-[var(--text-secondary,#64748b)]">No commits linked yet.</p>
             </div>
             <button type="button" className="mt-3 text-[12px] font-semibold text-[var(--accent,#4f46e5)] hover:underline">
               View on GitHub →

@@ -17,9 +17,13 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'buyer',
+        default: 'responder',
         enum: ['admin', 'manager', 'creator', 'responder'],
         required: true
+    },
+    inviteId: {
+        type: String,
+        default: null
     },
     specialization: {
         type: String,
@@ -29,11 +33,31 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    department: {
+        type: String,
+        default: null
+    },
+    status: {
+        type: String,
+        enum: ['online', 'away', 'offline'],
+        default: 'offline'
+    },
+    lastActive: {
+        type: Date,
+        default: null
+    },
+    isInviteUser: {
+        type: Boolean,
+        default: false
+    },
+    skills: {
+        type: [String],
+        default: []
+    },
     organizationId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Organization',
-    }
-    ,
+    },
     tokenVersion: {
         type: Number,
         default: 0
@@ -41,8 +65,7 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true })
 
-//indexing in future for faster search
-userSchema.index({ organizationId: 1})
+userSchema.index({ organizationId: 1 })
 
 userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;

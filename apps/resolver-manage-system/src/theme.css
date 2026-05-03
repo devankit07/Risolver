@@ -23,3 +23,49 @@ html body {
   background-color: var(--bg-base) !important;
   color: var(--text-primary) !important;
 }
+
+/* ── PDF / print styles ────────────────────────────────────────── */
+@media print {
+  /* Hide everything except the report detail panel */
+  body > * { display: none !important; }
+
+  /* Show only the report detail slide-over */
+  .report-detail {
+    display: flex !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Unhide the content inside report-detail */
+  body .report-detail,
+  body .report-detail * {
+    display: revert !important;
+  }
+
+  /* Hide action buttons and sticky footer in print */
+  .report-detail button,
+  .report-detail [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Remove sticky footer in print */
+  .report-detail > div:last-child {
+    display: none !important;
+  }
+
+  /* Ensure scrollable body shows fully */
+  .report-detail > div.flex-1 {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+}

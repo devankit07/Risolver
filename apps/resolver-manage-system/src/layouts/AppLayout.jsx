@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Outlet, useLocation, NavLink } from 'react-router-dom'
+import { Outlet, useLocation, NavLink, Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
 import { LayoutDashboard, MessageSquare, Users, FileText, Briefcase } from 'lucide-react'
@@ -50,15 +50,33 @@ function metaForPath(pathname) {
 
 export default function AppLayout() {
   const { pathname } = useLocation()
-  const user = useSelector((s)=> s.auth.user)
+  const user = useSelector((s) => s.auth.user)
+  const token = useSelector((s) => s.auth.token)
+
   /** @type {{ id: string }[]} */
   const incidents = useSelector((s) => s.incidents?.list ?? [])
-  const workspaceTo = `/workspace/${incidents[0]?.id ?? 'INC-041'}`
+  const firstWorkspaceId =
+    incidents.find((/** @type {{ status: string }} */ i) => i.status !== 'resolved')?.id ?? incidents[0]?.id
+  const workspaceTo = firstWorkspaceId ? `/workspace/${firstWorkspaceId}` : '/workspace'
 
   const [incidentsListSearch, setIncidentsListSearch] = useState('')
   useEffect(() => {
     if (!pathname.startsWith('/incidents/active')) setIncidentsListSearch('')
   }, [pathname])
+
+  // Redirect to login if not authenticated (after all hooks).
+  // Allow admin/manager website sessions through via resolver_token.
+  const hasToken = (() => {
+    if (token || localStorage.getItem('manage_token')) return true
+    try {
+      const u = JSON.parse(localStorage.getItem('resolver_user') || 'null')
+      if ((u?.role === 'admin' || u?.role === 'manager') && localStorage.getItem('resolver_token')) return true
+    } catch { /* ignore */ }
+    return false
+  })()
+  if (!user && !hasToken) {
+    return <Navigate to="/login" replace />
+  }
 
   const meta = metaForPath(pathname)
   const isDashboard = pathname === '/dashboard' || pathname === '/'
@@ -75,6 +93,7 @@ export default function AppLayout() {
             mode={isDashboard ? 'welcome' : 'page'}
             title={meta.title}
             welcomeName={firstName}
+            welcomeOrganizationName={user?.organizationName}
             subtitle={isDashboard ? undefined : meta.subtitle}
             breadcrumb={isDashboard ? [] : meta.breadcrumb}
             notificationCount={3}

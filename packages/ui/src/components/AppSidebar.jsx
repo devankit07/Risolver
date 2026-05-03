@@ -1,10 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Avatar } from './Avatar.jsx'
 
 /** Design token — sidebar surface */
 const SIDEBAR_BG = 'var(--sidebar-bg, #3730a3)'
-const W_SIDEBAR = 220
-
 const NAV = (workspaceTo) => [
   { to: '/dashboard', label: 'Dashboard', icon: GridIcon, prefix: null },
   { to: '/messages', label: 'Messages', icon: ChatIcon, prefix: '/messages' },
@@ -15,70 +14,108 @@ const NAV = (workspaceTo) => [
 ]
 
 /**
- * Fixed 220px workspace sidebar — labels always visible.
+ * Icon rail (72px) that expands to 220px on hover with labels + profile text.
  *
- * @param {{ user?: { name?: string, email?: string, role?: string }, logoSrc?: string, workspaceTo?: string }} props
+ * @param {{ user?: { name?: string, email?: string, role?: string } | null, logoSrc?: string, workspaceTo?: string }} props
  */
-export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/workspace/INC-041' }) {
+const HOVER_LEAVE_MS = 140
+
+function formatRoleLabel(role) {
+  if (!role || typeof role !== 'string') return 'Member'
+  return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
+}
+
+export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/dashboard' }) {
   const { pathname } = useLocation()
   const items = NAV(workspaceTo)
-  const roleLabel = user?.role ?? 'Member'
+  const roleLabel = formatRoleLabel(user?.role)
+
+  const [open, setOpen] = useState(false)
+  const leaveTimer = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current)
+    }
+  }, [])
+
+  const onSidebarEnter = () => {
+    if (leaveTimer.current) {
+      clearTimeout(leaveTimer.current)
+      leaveTimer.current = null
+    }
+    setOpen(true)
+  }
+
+  const onSidebarLeave = () => {
+    leaveTimer.current = setTimeout(() => setOpen(false), HOVER_LEAVE_MS)
+  }
 
   return (
     <div
-      className="box-border z-40 hidden h-full min-h-0 shrink-0 flex-col pt-6 pb-0 md:flex md:flex-col"
-      style={{ width: W_SIDEBAR }}
+      onMouseEnter={onSidebarEnter}
+      onMouseLeave={onSidebarLeave}
+      className={`box-border z-40 hidden h-full min-h-0 shrink-0 flex-col overflow-x-hidden pt-6 pb-0 transition-[width] duration-300 ease-out md:flex md:flex-col ${open ? 'w-[220px]' : 'w-[72px]'}`}
     >
-      <header className="flex shrink-0 items-center gap-2.5 px-1 pb-3">
+      <header className="flex min-w-0 shrink-0 items-center gap-2 px-1.5 pb-3">
         <NavLink
           to="/dashboard"
           end
           title="Dashboard"
           className={({ isActive }) =>
             [
-              'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1 shadow-sm ring-1 ring-white/30 transition-shadow',
-              isActive ? 'ring-2 ring-white' : 'hover:ring-white/60',
+              'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1 shadow-sm ring-1 ring-slate-200/80 transition-shadow',
+              isActive ? 'ring-2 ring-[var(--accent,#4f46e5)]' : 'hover:ring-slate-300',
             ].join(' ')
           }
         >
           <img src={logoSrc} alt="" width={36} height={36} className="h-9 w-9 object-contain" decoding="async" />
         </NavLink>
-        <div className="min-w-0">
-          <span className="block truncate text-lg font-bold leading-tight tracking-tight text-white">Resolver</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/75">
-            Incident response
-          </span>
+        <div
+          className={`min-w-0 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${open ? 'max-w-[200px] translate-x-0 opacity-100' : 'max-w-0 -translate-x-1 opacity-0'}`}
+          aria-hidden={!open}
+        >
+          <span className="block truncate text-lg font-bold leading-tight tracking-tight text-slate-900">Resolver</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Incident response</span>
         </div>
       </header>
 
       <div
-        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-tr-[20px] border border-white/10 shadow-lg"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-tr-[20px] border border-white/10 shadow-lg"
         style={{ background: SIDEBAR_BG }}
       >
-        <aside className="flex min-h-0 flex-1 flex-col overflow-hidden" style={{ background: SIDEBAR_BG }}>
-          <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-3 pb-4 pt-5">
+        <aside className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" style={{ background: SIDEBAR_BG }}>
+          <nav
+            className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pb-4 pt-5 transition-[padding,gap] duration-300 ease-out ${open ? 'gap-2 px-3' : 'gap-1 px-2'}`}
+          >
             {items.map(({ to, label, icon: Icon, prefix }) => (
               <NavLink
                 key={label}
                 to={to}
+                title={label}
                 className={({ isActive }) => {
                   const active = prefix ? pathname.startsWith(prefix) : isActive
                   return [
-                    'group flex items-center gap-3 rounded-[8px] px-3 py-3 text-[13px] font-semibold transition-colors border',
+                    'flex min-w-0 items-center rounded-[8px] py-3 text-[13px] font-semibold transition-all duration-200 border overflow-hidden',
+                    open ? 'justify-start gap-3 px-3' : 'justify-center gap-0 px-2',
                     active
                       ? 'border-white bg-white text-[#312e81] shadow-md'
                       : 'border-white/10 bg-white/10 text-white hover:bg-white/20',
                   ].join(' ')
                 }}
               >
-                <Icon size={18} />
-                <span className="truncate">{label}</span>
+                <Icon size={18} className="shrink-0" />
+                <span
+                  className={`min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-300 ease-out ${open ? 'max-w-[180px] translate-x-0 opacity-100' : 'max-w-0 translate-x-[-4px] opacity-0'}`}
+                >
+                  {label}
+                </span>
               </NavLink>
             ))}
           </nav>
 
           <div
-            className="mt-auto flex items-center gap-3 border-t border-white/15 px-3 py-3"
+            className={`mt-auto flex min-w-0 items-center border-t border-white/15 py-3 transition-[padding,gap] duration-300 ease-out ${open ? 'gap-3 px-3' : 'gap-2 px-2'}`}
             style={{ borderColor: 'rgba(255,255,255,0.15)' }}
           >
             <Avatar
@@ -88,8 +125,16 @@ export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/worksp
               foreground="var(--sidebar-bg, #3730a3)"
               className="ring-2 ring-white/40 shrink-0 shadow-sm"
             />
-            <div className="min-w-0 flex-1">
+            <div
+              className={`min-w-0 flex-1 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${open ? 'max-w-[200px] translate-x-0 opacity-100' : 'max-w-0 translate-x-[-4px] opacity-0'}`}
+              aria-hidden={!open}
+            >
               <span className="block truncate text-[13px] font-semibold text-white">{user?.name ?? 'User'}</span>
+              {user?.email ? (
+                <span className="mt-0.5 block truncate text-[11px] font-normal text-white/80" title={user.email}>
+                  {user.email}
+                </span>
+              ) : null}
               <span className="mt-1 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">
                 {roleLabel}
               </span>

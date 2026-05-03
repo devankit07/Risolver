@@ -1,5 +1,6 @@
-/** Optional JWT for backend calls (manage-system has no login; omit header if unset). */
+/** Bearer token — same keys as website AuthContext (`resolver_token`). */
 export function authHeaders() {
-  const t = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
+  if (typeof localStorage === 'undefined') return {}
+  const t = localStorage.getItem('resolver_token') ?? localStorage.getItem('token')
   return t ? { Authorization: `Bearer ${t}` } : {}
 }

@@ -41,6 +41,16 @@ export const Pricing = () => {
             Experience full AI automation — <span className="font-bold text-indigo-600">completely free</span> for early adopters. 
             No credit card required.
           </motion.p>
+
+          <motion.p
+            role="note"
+            className="mt-8 mx-auto max-w-3xl rounded-2xl border border-amber-200/80 bg-amber-50/90 px-5 py-4 text-left text-sm leading-relaxed text-amber-950/90 shadow-sm md:text-center"
+            {...fadeUp(0.18)}
+          >
+            <span className="font-semibold text-amber-900">Note:</span>{' '}
+            We do not support real payments yet—this pricing is for demonstration only. If needed later, a payment mode can be
+            activated in the product. Right now you still have access to premium features.
+          </motion.p>
         </div>
 
         {/* ── PRICING CARDS ── */}
@@ -65,7 +75,7 @@ export const Pricing = () => {
           {/* Most Popular Plan */}
           <PricingCard
             title="Pro"
-            price="0"
+            price="29"
             description="AI-powered assistance and deeper insights to speed up resolution."
             features={[
               'All Starter features',
@@ -81,8 +91,8 @@ export const Pricing = () => {
 
           {/* Premium Plan */}
           <PricingCard
-            title="Enterprise"
-            price="0"
+            title="Premium"
+            price="69"
             description="Full AI automation and GitHub integration for end-to-end management."
             features={[
               'All Pro features',

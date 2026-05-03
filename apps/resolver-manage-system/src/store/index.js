@@ -4,6 +4,9 @@ import incidentsReducer from './incidentsSlice.js'
 import teamReducer from './teamSlice.js'
 import messagesReducer from './messagesSlice.js'
 import uiReducer from './uiSlice.js'
+import dashboardReducer from './dashboardSlice.js'
+import inviteReducer from './inviteSlice.js'
+import postmortemsReducer from './postmortemsSlice.js'
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +15,8 @@ export const store = configureStore({
     team: teamReducer,
     messages: messagesReducer,
     ui: uiReducer,
+    dashboard: dashboardReducer,
+    invite: inviteReducer,
+    postmortems: postmortemsReducer,
   },
 })
