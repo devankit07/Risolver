@@ -20,9 +20,8 @@ import {
   FileText,
   Zap,
   MoreHorizontal,
-  ExternalLink,
   ChevronRight,
-  ArrowRight,
+  Activity,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { KpiCard, Avatar, SurfaceCard } from '@resolver/ui'
@@ -52,6 +51,13 @@ const MINI_THREADS = [
   { id: 't1', name: 'Sara Patel', preview: 'Rolling restart complete on pool…', time: '2m ago', unread: true },
   { id: 't2', name: 'INC-041 thread', preview: 'P99 still elevated — checking DB…', time: '12m ago', unread: true },
   { id: 't3', name: 'Priya Nair', preview: 'Postmortem draft looks good.', time: '1h ago', unread: false },
+]
+
+const RECENT_ACTIVITIES = [
+  { actor: 'Sara Patel', action: 'raised severity on INC-041 to critical', time: '3m ago' },
+  { actor: 'James Lee', action: 'joined the INC-040 war room', time: '12m ago' },
+  { actor: 'Priya Nair', action: 'published postmortem for INC-038', time: '1h ago' },
+  { actor: 'Alex Kim', action: 'acknowledged alert · CDN edge US-East', time: '2h ago' },
 ]
 
 function PanelHead({ icon: Icon, title, meta, action }) {
@@ -261,82 +267,122 @@ export default function Dashboard() {
         </button>
       </SurfaceCard>
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-        <SurfaceCard className="flex min-h-0 flex-col p-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-stretch">
+        <SurfaceCard className="flex h-full min-h-0 flex-col p-6">
           <PanelHead icon={AlertCircle} title="Active incidents list" meta="Incidents collection" />
 
-          <div className="flex flex-col gap-2">
-            {incidents
-              .filter((i) => i.status !== 'resolved')
-              .slice(0, 4)
-              .map((inc) => (
-                <div
-                  key={inc.id}
-                  className="flex items-center justify-between gap-2 rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-3 transition-colors hover:border-[var(--accent-border,#c7d2fe)]"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span
-                      className={`h-2 w-2 shrink-0 rounded-full ${inc.severity === 'critical' ? 'animate-pulse bg-[var(--danger,#ef4444)]' : 'bg-[var(--warning,#f59e0b)]'}`}
-                      aria-hidden
-                    />
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary,#64748b)]">
-                        {inc.id}
-                      </p>
-                      <p className="truncate text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">{inc.title}</p>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white shadow-sm">
+              {incidents
+                .filter((i) => i.status !== 'resolved')
+                .slice(0, 4)
+                .map((inc) => (
+                  <button
+                    key={inc.id}
+                    type="button"
+                    onClick={() => navigate(`/workspace/${inc.id}`)}
+                    className="flex w-full items-center justify-between gap-3 border-b border-[var(--border,#e2e8f0)] px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-[var(--bg-base,#f8fafc)]"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`h-2 w-2 shrink-0 rounded-full ${inc.severity === 'critical' ? 'animate-pulse bg-[var(--danger,#ef4444)]' : 'bg-[var(--warning,#f59e0b)]'}`}
+                        aria-hidden
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary,#64748b)]">
+                          {inc.id}
+                        </p>
+                        <p className="truncate text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">{inc.title}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        inc.status === 'investigating' ? 'bg-rose-50 text-rose-600' : 'bg-slate-200/80 text-slate-600'
-                      }`}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          inc.status === 'investigating' ? 'bg-rose-50 text-rose-600' : 'bg-slate-200/80 text-slate-600'
+                        }`}
+                      >
+                        {inc.status.charAt(0).toUpperCase() + inc.status.slice(1)}
+                      </span>
+                      <ChevronRight size={18} className="shrink-0 text-slate-400" strokeWidth={2} aria-hidden />
+                    </div>
+                  </button>
+                ))}
+            </div>
+
+            <button
+              type="button"
+              className={`${primaryBtn} mt-4 shrink-0`}
+              onClick={() => navigate('/incidents/active')}
+            >
+              View all
+            </button>
+          </div>
+        </SurfaceCard>
+
+        <div className="flex min-h-0 flex-col gap-4 lg:h-full">
+          <SurfaceCard className="flex min-h-0 flex-1 flex-col p-6">
+            <PanelHead icon={FileText} title="Public reports" meta="Postmortems collection" />
+
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex flex-1 flex-col overflow-y-auto rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white shadow-sm">
+                {REPORTS.slice(0, 3).map((r) => {
+                  const reportId = r.title.split(' - ')[1]
+                  return (
+                    <button
+                      key={r.title}
+                      type="button"
+                      onClick={() => navigate(`/reports/${reportId}`)}
+                      className="flex w-full items-start justify-between gap-3 border-b border-[var(--border,#e2e8f0)] px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-[var(--bg-base,#f8fafc)]"
                     >
-                      {inc.status.charAt(0).toUpperCase() + inc.status.slice(1)}
-                    </span>
-                    <ChevronRight size={16} className="text-slate-300" aria-hidden />
-                  </div>
-                </div>
-              ))}
-          </div>
-
-          <button type="button" className={`${primaryBtn} mt-6`}>
-            View all
-          </button>
-        </SurfaceCard>
-
-        <SurfaceCard className="flex min-h-0 flex-col p-6">
-          <PanelHead icon={FileText} title="Public reports" meta="Postmortems collection" />
-
-          <div className="flex flex-col gap-4">
-            {REPORTS.slice(0, 3).map((r) => (
-              <div
-                key={r.title}
-                className="flex items-start justify-between gap-3 border-b border-[var(--border,#e2e8f0)] pb-4 last:border-0 last:pb-0"
-              >
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold leading-snug text-[var(--text-primary,#1e293b)]">
-                    {r.title.split(' - ')[0]}
-                  </p>
-                  <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">
-                    {r.date} · {r.title.split(' - ')[1]}
-                  </p>
-                </div>
-                <ExternalLink size={16} className="mt-0.5 shrink-0 text-[var(--accent,#4f46e5)]" aria-hidden />
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold leading-snug text-[var(--text-primary,#1e293b)]">
+                          {r.title.split(' - ')[0]}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">
+                          {r.date} · {reportId}
+                        </p>
+                      </div>
+                      <ChevronRight size={18} className="mt-0.5 shrink-0 text-slate-400" strokeWidth={2} aria-hidden />
+                    </button>
+                  )
+                })}
               </div>
-            ))}
-          </div>
 
-          <button type="button" className={`${primaryBtn} mt-6`} onClick={() => navigate('/reports')}>
-            View all
-          </button>
-        </SurfaceCard>
+              <button type="button" className={`${primaryBtn} mt-4 shrink-0`} onClick={() => navigate('/reports')}>
+                View all
+              </button>
+            </div>
+          </SurfaceCard>
 
-        <div className="flex min-h-0 flex-col gap-4">
-          <SurfaceCard className="flex flex-col p-6">
+          <SurfaceCard className="flex min-h-0 flex-1 flex-col p-6">
+            <PanelHead icon={Activity} title="Recent activities" meta="Organization feed" />
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white shadow-sm">
+              {RECENT_ACTIVITIES.map((a, idx) => (
+                <button
+                  key={`${a.actor}-${idx}`}
+                  type="button"
+                  onClick={() => navigate('/incidents/active')}
+                  className="flex w-full items-start justify-between gap-3 border-b border-[var(--border,#e2e8f0)] px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-[var(--bg-base,#f8fafc)]"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[13px] leading-snug text-[var(--text-primary,#1e293b)]">
+                      <span className="font-semibold">{a.actor}</span>{' '}
+                      <span className="font-normal text-[var(--text-secondary,#64748b)]">{a.action}</span>
+                    </p>
+                    <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">{a.time}</p>
+                  </div>
+                  <ChevronRight size={18} className="mt-0.5 shrink-0 text-slate-400" strokeWidth={2} aria-hidden />
+                </button>
+              ))}
+            </div>
+          </SurfaceCard>
+        </div>
+
+        <div className="flex min-h-0 flex-col gap-4 lg:h-full">
+          <SurfaceCard className="flex min-h-0 flex-1 flex-col p-6">
             <PanelHead icon={Sparkles} title="AI insights" meta="Operational signals" />
 
-            <ul className="flex flex-col gap-4">
+            <ul className="flex min-h-0 flex-1 flex-col justify-center gap-4">
               <li className="flex gap-3">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-dim,#eef2ff)] text-[var(--accent,#4f46e5)]">
                   <Sparkles size={14} />
@@ -357,9 +403,9 @@ export default function Dashboard() {
             </ul>
           </SurfaceCard>
 
-          <SurfaceCard className="flex flex-col p-6">
+          <SurfaceCard className="flex min-h-0 flex-1 flex-col p-6">
             <PanelHead icon={MessageSquare} title="Message threads" meta="Latest previews" />
-            <div className="flex flex-col gap-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
               {MINI_THREADS.map((t) => (
                 <button
                   key={`stack-${t.id}`}
@@ -381,7 +427,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={() => navigate('/messages')}
-              className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--accent,#4f46e5)] hover:underline"
+              className="mt-3 shrink-0 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--accent,#4f46e5)] hover:underline"
             >
               View all →
             </button>

@@ -9,6 +9,7 @@ const NAV = (workspaceTo) => [
   { to: '/dashboard', label: 'Dashboard', icon: GridIcon, prefix: null },
   { to: '/messages', label: 'Messages', icon: ChatIcon, prefix: '/messages' },
   { to: '/team', label: 'Team', icon: PeopleIcon, prefix: '/team' },
+  { to: '/incidents/active', label: 'Incidents', icon: AlertIncidentsIcon, prefix: '/incidents' },
   { to: '/reports', label: 'Reports', icon: DocIcon, prefix: '/reports' },
   { to: workspaceTo, label: 'Workspace', icon: ToolsIcon, prefix: '/workspace' },
 ]
@@ -127,6 +128,21 @@ function ChatIcon({ size = 16 }) {
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="shrink-0">
       <rect x="1" y="2" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.4" />
       <path d="M4 14l3-3h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** Open / active incidents — matches other nav icons (stroke, 16×16). */
+function AlertIncidentsIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="shrink-0" aria-hidden>
+      <path
+        d="M8 2.2l5.8 10.4a1 1 0 01-.87 1.4H3.07a1 1 0 01-.87-1.4L8 2.2z"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinejoin="round"
+      />
+      <path d="M8 6v3.2M8 11.35v.01" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
     </svg>
   )
 }

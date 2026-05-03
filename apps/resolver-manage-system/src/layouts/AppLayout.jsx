@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation, NavLink } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
@@ -24,6 +25,11 @@ const PAGE_META = {
     subtitle: 'Postmortems and shared summaries.',
     breadcrumb: ['Home', 'Reports'],
   },
+  '/incidents/active': {
+    title: 'Active incidents',
+    subtitle: 'Open and in-progress incidents across your organization.',
+    breadcrumb: ['Home', 'Active incidents'],
+  },
   '/workspace': {
     title: 'Work',
     subtitle: 'Incident workspace and timeline.',
@@ -49,9 +55,15 @@ export default function AppLayout() {
   const incidents = useSelector((s) => s.incidents?.list ?? [])
   const workspaceTo = `/workspace/${incidents[0]?.id ?? 'INC-041'}`
 
+  const [incidentsListSearch, setIncidentsListSearch] = useState('')
+  useEffect(() => {
+    if (!pathname.startsWith('/incidents/active')) setIncidentsListSearch('')
+  }, [pathname])
+
   const meta = metaForPath(pathname)
   const isDashboard = pathname === '/dashboard' || pathname === '/'
   const firstName = user?.name?.split(/\s+/)[0] ?? 'there'
+  const isActiveIncidentsPage = pathname.startsWith('/incidents/active')
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg-base,#f8fafc)]">
@@ -67,9 +79,10 @@ export default function AppLayout() {
             breadcrumb={isDashboard ? [] : meta.breadcrumb}
             notificationCount={3}
             searchPlaceholder="Search incidents…"
+            onSearch={isActiveIncidentsPage ? setIncidentsListSearch : undefined}
           />
           <MotionPage>
-            <Outlet />
+            <Outlet context={{ incidentsListSearch }} />
           </MotionPage>
         </main>
       </div>

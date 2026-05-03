@@ -7,6 +7,7 @@ import Profile from './pages/Profile.jsx'
 import Messages from './pages/Messages.jsx'
 import Reports from './pages/Reports.jsx'
 import ReportDetail from './pages/ReportDetail.jsx'
+import ActiveIncidents from './pages/ActiveIncidents.jsx'
 
 export default function App() {
   return (
@@ -14,7 +15,8 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard"             element={<Dashboard />} />
-        <Route path="/incidents"             element={<Navigate to="/dashboard" replace />} />
+        <Route path="/incidents/active"      element={<ActiveIncidents />} />
+        <Route path="/incidents"             element={<Navigate to="/incidents/active" replace />} />
         <Route path="/workspace/:incidentId" element={<Workspace />} />
         <Route path="/team"                  element={<Team />} />
         <Route path="/team/:userId"          element={<Profile />} />

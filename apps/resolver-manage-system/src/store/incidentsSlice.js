@@ -49,11 +49,11 @@ export const generatePostmortem = createAsyncThunk('incidents/postmortem', async
 })
 
 const DEMO_INCIDENTS = [
-  { id: 'INC-041', title: 'API Gateway timeout spike', status: 'investigating', severity: 'critical', service: 'API Gateway', assignees: ['Alex Kim', 'Sara Patel'], createdAt: 'May 2, 4:12 AM' },
-  { id: 'INC-040', title: 'Database connection pool exhausted', status: 'open', severity: 'high', service: 'PostgreSQL', assignees: ['James Lee'], createdAt: 'May 2, 3:47 AM' },
-  { id: 'INC-039', title: 'CDN cache invalidation failure', status: 'investigating', severity: 'medium', service: 'CDN', assignees: ['Priya Nair', 'Alex Kim'], createdAt: 'May 1, 11:30 PM' },
-  { id: 'INC-038', title: 'Payment service 503 errors', status: 'resolved', severity: 'critical', service: 'Payments', assignees: ['Sara Patel'], createdAt: 'May 1, 8:00 PM' },
-  { id: 'INC-037', title: 'Auth token expiry not refreshing', status: 'resolved', severity: 'high', service: 'Auth', assignees: ['James Lee', 'Priya Nair'], createdAt: 'May 1, 2:15 PM' },
+  { id: 'INC-041', title: 'API Gateway timeout spike', status: 'investigating', severity: 'critical', service: 'API Gateway', assignees: ['Alex Kim', 'Sara Patel'], createdAt: 'May 2, 4:12 AM', assignedAt: 'May 2, 4:18 AM' },
+  { id: 'INC-040', title: 'Database connection pool exhausted', status: 'open', severity: 'high', service: 'PostgreSQL', assignees: ['James Lee'], createdAt: 'May 2, 3:47 AM', assignedAt: 'May 2, 3:50 AM' },
+  { id: 'INC-039', title: 'CDN cache invalidation failure', status: 'investigating', severity: 'medium', service: 'CDN', assignees: ['Priya Nair', 'Alex Kim'], createdAt: 'May 1, 11:30 PM', assignedAt: 'May 2, 12:05 AM' },
+  { id: 'INC-038', title: 'Payment service 503 errors', status: 'resolved', severity: 'critical', service: 'Payments', assignees: ['Sara Patel'], createdAt: 'May 1, 8:00 PM', assignedAt: 'May 1, 8:04 PM' },
+  { id: 'INC-037', title: 'Auth token expiry not refreshing', status: 'resolved', severity: 'high', service: 'Auth', assignees: ['James Lee', 'Priya Nair'], createdAt: 'May 1, 2:15 PM', assignedAt: 'May 1, 2:20 PM' },
   { id: 'INC-036', title: 'Notification queue backlog', status: 'open', severity: 'low', service: 'Notifications', assignees: [], createdAt: 'May 1, 9:00 AM' },
 ]
 
