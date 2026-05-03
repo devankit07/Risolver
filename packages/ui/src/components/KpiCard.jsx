@@ -27,10 +27,13 @@ export function KpiCard({
   const labelC = light ? 'text-slate-600' : 'text-zinc-400'
   const subC = light ? 'text-slate-500' : 'text-zinc-500'
 
+  const shellPad = Icon ? 'p-6 pb-0 pr-0' : 'p-6'
+
   return (
     <div
       className={[
-        'group relative overflow-hidden rounded-xl border-0 p-6 pb-0 pr-0',
+        'group relative overflow-hidden rounded-[8px] border-0',
+        shellPad,
         'shadow-[0_3px_16px_rgba(15,23,42,0.10),0_2px_5px_rgba(15,23,42,0.06)]',
         'transition-shadow duration-300 hover:shadow-[0_6px_26px_rgba(15,23,42,0.12),0_3px_8px_rgba(15,23,42,0.08)]',
         light ? 'bg-white' : 'bg-zinc-900',
@@ -38,7 +41,7 @@ export function KpiCard({
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1 pr-2">
+        <div className={`min-w-0 flex-1 ${Icon ? 'pr-2' : ''}`}>
           <p className={`mb-2 text-sm font-medium ${labelC}`}>{label}</p>
           <p
             className="text-4xl font-bold leading-none tracking-tight"

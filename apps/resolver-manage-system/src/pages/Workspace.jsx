@@ -2,74 +2,75 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { io } from 'socket.io-client'
-import { StatusBadge, Avatar, TimelineItem } from '@resolver/ui'
-import { triageIncident, updateRealtimeIncident } from '../store/incidentsSlice.js'
-import { 
-  Sparkles, 
-  Zap, 
-  Send, 
-  RotateCcw, 
-  Paperclip, 
-  AtSign, 
-  ChevronRight,
-  MessageSquare,
-  AlertTriangle
-} from 'lucide-react'
+import {
+  WorkspaceHeader,
+  ResolutionMethodCard,
+  CommitItem,
+  TimelineItem,
+  AiTriageCard,
+} from '@resolver/ui'
+import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
+import { updateRealtimeIncident } from '../store/incidentsSlice.js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173'
-const IN = '#4f46e5'
-const BK = '#0f172a'
+const API = import.meta.env.VITE_API_URL ?? ''
 
-const DEMO_TIMELINE = [
-  { id: 't1', type: 'ai', timestamp: '4:02 AM', author: null, content: 'Incident auto-detected: elevated error rate on API Gateway. P99 latency jumped to 8.2s.', isAi: true },
-  { id: 't2', type: 'escalation', timestamp: '4:05 AM', author: 'Alex Kim', content: 'Severity escalated to Critical. Paging on-call team.' },
-  { id: 't3', type: 'update', timestamp: '4:10 AM', author: 'Sara Patel', content: 'Investigating upstream DB connection pool. Pool usage at 98%.' },
-  { id: 't4', type: 'change', timestamp: '4:18 AM', author: 'James Lee', content: 'Increased DB connection pool limit to 200. Restarting DB proxy service.' },
-  { id: 't5', type: 'update', timestamp: '4:22 AM', author: 'Sara Patel', content: 'Error rate dropping. API latency returning to normal levels.' },
+const DEMO_COMMITS = [
+  { hash: 'a1b2c3d', message: 'Increase pool size default to 200', author: 'Sara Patel', time: '2h ago' },
+  { hash: 'e4f5g6h', message: 'Add circuit breaker on checkout', author: 'James Lee', time: '4h ago' },
 ]
 
-const DEMO_TRIAGE = {
-  summary: [
-    'API Gateway experiencing timeout errors under peak load',
-    'Root cause: PostgreSQL connection pool exhausted (98% utilization)',
-    'Affects all downstream services dependent on the primary DB cluster',
-    'Estimated 12% of requests failing with 503 responses',
-  ],
-  suggestions: [
-    'Increase DB connection pool limit from 100 to 200 immediately',
-    'Restart DB proxy service after pool limit change',
-    'Enable read replicas to offload SELECT queries',
-    'Set up connection pool alerting threshold at 80%',
-    'Review slow query log — potential N+1 query causing pool pressure',
-  ],
-}
-
-const UPDATE_TYPES = ['Update', 'Escalate', 'Note']
+const DEMO_TIMELINE = [
+  { id: 't1', type: 'ai', timestamp: '4:02 AM', author: null, content: 'Incident auto-detected: elevated error rate.', isAi: true },
+  { id: 't2', type: 'escalation', timestamp: '4:05 AM', author: 'Alex Kim', content: 'Severity escalated to Critical.' },
+  { id: 't3', type: 'update', timestamp: '4:10 AM', author: 'Sara Patel', content: 'Investigating DB connection pool.' },
+]
 
 export default function Workspace() {
   const { incidentId } = useParams()
   const navigate = useNavigate()
   /** @type {any} */
-  const dispatch = useDispatch();
-  const { list, triageLoading, triageData } = useSelector((/** @type {any} */ s) => s.incidents)
+  const dispatch = useDispatch()
+  const { list, triageLoading, triageData } = useSelector((/** @type {any} */ s) => s.incidents) // triageLoading drives AI card
 
   const incident = list.find((i) => i.id === incidentId) ?? {
     id: incidentId,
-    title: 'Loading incident…',
+    title: 'Payment gateway 500 errors',
     status: 'investigating',
     severity: 'critical',
-    service: 'Unknown',
-    assignees: ['Alex Kim', 'Sara Patel'],
+    service: 'Payments',
+    assignees: ['Sara Patel'],
     createdAt: '—',
   }
 
   const [timeline, setTimeline] = useState(DEMO_TIMELINE)
   const [updateText, setUpdateText] = useState('')
   const [updateType, setUpdateType] = useState('Update')
-  const triage = triageData[incidentId] ?? DEMO_TRIAGE
+  const [resolution, setResolution] = useState(null)
+  const [githubUrl, setGithubUrl] = useState('')
+  const [resolved, setResolved] = useState(false)
+  const [repoAnalyzing, setRepoAnalyzing] = useState(false)
   const feedRef = useRef(null)
 
+  const triageDefaults = {
+    summary: [
+      'API Gateway experiencing timeout errors under peak load',
+      'PostgreSQL connection pool exhausted',
+      'Downstream services affected',
+    ],
+    suggestions: [
+      'Increase DB connection pool limit',
+      'Restart DB proxy after pool change',
+      'Enable read replicas for SELECT offload',
+    ],
+  }
+  const rawTriage = triageData[incidentId]
+  const triage = {
+    summary: Array.isArray(rawTriage?.summary) ? rawTriage.summary : triageDefaults.summary,
+    suggestions: Array.isArray(rawTriage?.suggestions) ? rawTriage.suggestions : triageDefaults.suggestions,
+  }
+
   useEffect(() => {
+    if (!API) return
     const socket = io(`${API}/incidents`, {
       transports: ['websocket'],
       auth: { token: localStorage.getItem('token') ?? 'dev-admin-session' },
@@ -81,19 +82,10 @@ export default function Workspace() {
         setTimeline((prev) => [payload.timelineEntry, ...prev])
       }
     })
-    socket.on('incident:new', (payload) => {
-      dispatch(updateRealtimeIncident(payload))
-    })
-    return () => { socket.disconnect(); }
+    return () => {
+      socket.disconnect()
+    }
   }, [incidentId, dispatch])
-
-  useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = 0
-  }, [timeline.length])
-
-  function handleTriage() {
-    dispatch(/** @type {any} */(triageIncident)(incidentId))
-  }
 
   function postUpdate() {
     if (!updateText.trim()) return
@@ -108,174 +100,197 @@ export default function Workspace() {
     setUpdateText('')
   }
 
-  const sevColor = { critical: BK, high: IN, medium: IN, low: '#94a3b8' }
+  function handleResolve() {
+    setResolved(true)
+  }
 
-  const [activeTab, setActiveTab] = useState('Update')
+  function handleAiSolutionConfirm() {
+    if (!githubUrl.trim()) return
+    setRepoAnalyzing(true)
+    window.setTimeout(() => setRepoAnalyzing(false), 1600)
+  }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6 min-h-screen bg-[#fafbfc]">
-      {/* LEFT COLUMN */}
-      <div className="flex-1 flex flex-col gap-6">
-        
-        {/* Problem Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[14px] font-bold text-slate-800">Problem</h2>
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[#4f46e5]">
-                <Sparkles size={12} fill="currentColor" className="opacity-80" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">AI Analysis</span>
-              </div>
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-              <ul className="flex flex-col gap-2.5">
-                {triage.summary.map((point, i) => (
-                  <li key={i} className="text-[13px] text-slate-600 leading-relaxed font-medium">
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
+    <div className="flex flex-col gap-4">
+      <WorkspaceHeader
+        incidentId={incident.id}
+        title={incident.title}
+        severity={incident.severity}
+        status={incident.status}
+        assigneeName={incident.assignees?.[0]}
+        onBack={() => navigate(-1)}
+        onMarkResolved={handleResolve}
+        resolved={resolved}
+        resolutionMethod={resolution === 'ai_solution' ? 'AI Solution' : resolution === 'ai_suggestion' ? 'AI Suggestion' : resolution === 'manual' ? 'Manual' : undefined}
+      />
 
-        {/* Solution Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[14px] font-bold text-slate-800">Solution</h2>
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 border border-indigo-100 text-[#4f46e5]">
-                <Zap size={12} fill="currentColor" className="opacity-80" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">AI Suggested</span>
-              </div>
-            </div>
-          </div>
-          <div className="p-5 flex flex-col gap-5">
-            <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-              <ul className="flex flex-col gap-2.5">
-                {triage.suggestions.map((point, i) => (
-                  <li key={i} className="text-[13px] text-slate-600 leading-relaxed font-medium">
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="flex items-center gap-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_minmax(0,1fr)_280px]">
+        {/* Column 1 */}
+        <div className="flex flex-col gap-4">
+          <AiTriageCard
+            variant="light"
+            summary={triage.summary}
+            suggestions={triage.suggestions}
+            isLoading={triageLoading}
+            generatedAt="3 min ago"
+          />
+
+          {!resolved && (
+            <ResolutionMethodCard selected={resolution} onSelect={(m) => setResolution(m)} />
+          )}
+
+          {resolution === 'ai_solution' && !resolved && (
+            <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white p-4">
+              <label className="text-[12px] font-medium text-[var(--text-secondary,#64748b)]">GitHub repository URL</label>
+              <input
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                placeholder="https://github.com/org/repo"
+                className="mt-2 w-full rounded-[8px] border border-[var(--border,#e2e8f0)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/25"
+              />
               <button
                 type="button"
-                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white text-[#4f46e5] text-[13px] font-bold hover:bg-indigo-50 transition-colors"
+                onClick={handleAiSolutionConfirm}
+                className="mt-3 w-full rounded-[6px] bg-[var(--accent,#4f46e5)] py-2 text-[12px] font-semibold text-white hover:brightness-110"
               >
-                <Send size={16} />
-                Send Report
+                Analyze →
               </button>
+              {repoAnalyzing && (
+                <p className="mt-3 flex items-center gap-2 text-[13px] text-[var(--text-secondary,#64748b)]">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent,#4f46e5)] border-t-transparent" />
+                  Analyzing repository…
+                </p>
+              )}
+            </div>
+          )}
+
+          {resolution && !resolved && (
+            <div className="rounded-[8px] border border-violet-200 bg-violet-50 p-4">
+              <p className="text-[13px] leading-relaxed text-violet-950">
+                {resolution === 'manual'
+                  ? 'Describe the remediation in the manual resolution panel below.'
+                  : 'AI-generated remediation steps would appear here after analysis completes.'}
+              </p>
+              {resolution !== 'manual' && (
+                <button
+                  type="button"
+                  onClick={handleResolve}
+                  className="mt-4 w-full rounded-[6px] bg-[var(--success,#10b981)] py-2.5 text-[13px] font-semibold text-white hover:brightness-110"
+                >
+                  Mark as done →
+                </button>
+              )}
+            </div>
+          )}
+
+          {resolution === 'manual' && !resolved && (
+            <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white p-4">
+              <textarea
+                rows={4}
+                placeholder="Describe what you did to resolve this…"
+                className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/20"
+              />
               <button
                 type="button"
-                className="flex-1 h-11 flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold hover:bg-[#4338ca] transition-all shadow-md shadow-indigo-100"
+                onClick={handleResolve}
+                className="mt-3 w-full rounded-[6px] bg-slate-700 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--accent,#4f46e5)]"
               >
-                <RotateCcw size={16} />
-                Reverify Code
+                Submit manually →
               </button>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Update / Input Section */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 p-2 bg-slate-50/50 border-b border-slate-100">
-            {['Update', 'Escalation', 'Note'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setUpdateType(tab)}
-                className={`px-4 py-2 rounded-xl text-[12px] font-bold transition-all ${
-                  updateType === tab 
-                    ? 'bg-indigo-50 text-[#4f46e5] border border-indigo-100' 
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {tab}
-              </button>
+        {/* Column 2 */}
+        <div className="flex min-h-[520px] flex-col rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)]">
+          <div className="flex items-center justify-between border-b border-[var(--border,#e2e8f0)] px-4 py-3">
+            <span className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Live timeline</span>
+            <button type="button" className="rounded-[6px] bg-[var(--accent,#4f46e5)] px-3 py-1 text-[11px] font-semibold text-white">
+              Post update
+            </button>
+          </div>
+          <div ref={feedRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            {timeline.map((item, idx) => (
+              <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
             ))}
           </div>
-          <div className="p-4">
+          <div className="border-t border-[var(--border,#e2e8f0)] p-3">
+            <div className="mb-2 flex gap-2">
+              {['Update', 'Escalation', 'Note'].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setUpdateType(t)}
+                  className={`rounded-[6px] px-3 py-1 text-[11px] font-semibold ${
+                    updateType === t ? 'bg-[var(--accent-dim,#eef2ff)] text-[var(--accent,#4f46e5)]' : 'text-[var(--text-secondary,#64748b)]'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
             <textarea
-              rows={4}
+              rows={3}
               value={updateText}
               onChange={(e) => setUpdateText(e.target.value)}
-              placeholder="Add update, escalation, or note..."
-              className="w-full text-[14px] text-slate-700 placeholder:text-slate-400 border-none outline-none resize-none focus:ring-0"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) postUpdate()
-              }}
+              className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none"
+              placeholder="Post an update…"
             />
-            <div className="flex items-center justify-between mt-2 pt-4 border-t border-slate-50">
-              <div className="flex items-center gap-4 text-slate-400">
-                <button type="button" className="hover:text-slate-600 transition-colors">
-                  <Paperclip size={18} />
-                </button>
-                <button type="button" className="hover:text-slate-600 transition-colors">
-                  <AtSign size={18} />
-                </button>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex gap-2 text-[var(--text-secondary,#64748b)]">
+                <Paperclip size={18} />
+                <Hash size={18} />
               </div>
               <button
                 type="button"
                 onClick={postUpdate}
-                className="h-10 px-6 rounded-xl bg-[#4f46e5] text-white text-[13px] font-bold hover:bg-[#4338ca] transition-all"
+                className="rounded-[6px] bg-[var(--accent,#4f46e5)] px-4 py-2 text-[12px] font-semibold text-white"
               >
                 Post
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT COLUMN — Latest Incidents / Timeline */}
-      <div className="w-full lg:w-[380px] shrink-0">
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col min-h-full">
-          <div className="px-6 py-5 border-b border-slate-100">
-            <h2 className="text-[15px] font-bold text-slate-800">Latest Incidents</h2>
-          </div>
-          
-          <div ref={feedRef} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-0">
-            {timeline.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                <MessageSquare size={32} className="opacity-20 mb-3" />
-                <p className="text-[13px]">No updates yet</p>
-              </div>
-            ) : (
-              timeline.map((item, idx) => (
-                <TimelineItem 
-                  key={item.id} 
-                  variant="light" 
-                  item={item} 
-                  isLast={idx === timeline.length - 1} 
-                />
-              ))
-            )}
-          </div>
-
-          <div className="px-6 py-4 border-t border-slate-100">
-            <button
-              onClick={() => navigate('/incidents')}
-              className="flex items-center gap-1.5 text-[13px] font-bold text-[#4f46e5] hover:gap-2 transition-all"
-            >
-              View all incidents
-              <ChevronRight size={16} />
+        {/* Column 3 */}
+        <div className="flex flex-col gap-4">
+          <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Recent commits</span>
+              <Github size={16} className="text-[var(--text-secondary,#64748b)]" />
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">from linked repository</p>
+            <div className="mt-4 flex flex-col">
+              {DEMO_COMMITS.map((c) => (
+                <CommitItem key={c.hash} {...c} />
+              ))}
+            </div>
+            <button type="button" className="mt-3 text-[12px] font-semibold text-[var(--accent,#4f46e5)] hover:underline">
+              View on GitHub →
             </button>
+          </div>
+
+          <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] p-4">
+            <p className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Incident details</p>
+            <dl className="mt-3 space-y-2 text-[12px]">
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--text-secondary,#64748b)]">Service</dt>
+                <dd className="font-medium">{incident.service}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--text-secondary,#64748b)]">Created</dt>
+                <dd>{incident.createdAt}</dd>
+              </div>
+            </dl>
+            {resolved && (
+              <p className="mt-4 text-[12px] font-semibold text-[var(--accent,#4f46e5)]">
+                <Sparkles className="mr-1 inline h-3 w-3" />
+                View full report
+              </p>
+            )}
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function DetailRow({ label, children }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-[11px] shrink-0 text-slate-500">{label}</span>
-      {children}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { createSlice } from '@reduxjs/toolkit'
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: { name: 'Admin User', email: 'admin@resolver.io' },
+    user: { name: 'Admin User', email: 'admin@resolver.io', role: 'Admin' },
     token: null,
   },
   reducers: {

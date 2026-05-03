@@ -1,6 +1,5 @@
 import { Avatar } from './Avatar.jsx'
 import { StatusBadge } from './StatusBadge.jsx'
-import { CheckCircle2, XCircle } from 'lucide-react'
 
 const ROLE_DARK = {
   admin:   { bg: '#00e87a22', color: '#00e87a', border: '#00e87a33' },
@@ -36,7 +35,7 @@ export function TeamMemberRow({ member, onClick, onViewProfile, variant = 'dark'
   return (
     <tr
       onClick={onClick}
-      className={`border-b cursor-pointer transition-colors ${rowHover} ${L ? 'border-slate-200' : 'border-[#1a1a1a]'}`}
+      className={`border-b cursor-pointer border-l-2 border-l-transparent transition-colors hover:border-l-indigo-500 ${L ? 'hover:bg-[#f8fafc]' : ''} ${rowHover} ${L ? 'border-slate-200' : 'border-[#1a1a1a]'}`}
     >
       <td className="py-3 pl-4 pr-2">
         <div className="flex items-center gap-2.5">
@@ -83,16 +82,16 @@ export function TeamMemberRow({ member, onClick, onViewProfile, variant = 'dark'
         </span>
       </td>
       <td className="py-3 px-2">
-        {member.emailVerified ? (
-          <div className="flex items-center gap-1.5 text-[11px] text-[#059669]">
-            <CheckCircle2 size={14} />
-            <span>Yes</span>
-          </div>
+        {member.onCall ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Yes
+          </span>
         ) : (
-          <div className="flex items-center gap-1.5 text-[11px] text-[#dc2626]">
-            <XCircle size={14} />
-            <span>No</span>
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 ring-1 ring-slate-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+            No
+          </span>
         )}
       </td>
       <td className="py-3 pl-2 pr-4">

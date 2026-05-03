@@ -1,101 +1,112 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { Avatar } from './Avatar.jsx'
 
-/** Indigo + white palette aligned with Resolver marketing site */
-const SIDEBAR_BG = '#4338ca'
-const NAV = [
+/** Design token — sidebar surface */
+const SIDEBAR_BG = 'var(--sidebar-bg, #3730a3)'
+const W_SIDEBAR = 220
+
+const NAV = (workspaceTo) => [
   { to: '/dashboard', label: 'Dashboard', icon: GridIcon, prefix: null },
   { to: '/messages', label: 'Messages', icon: ChatIcon, prefix: '/messages' },
-  { to: '/team', label: 'Team manage', icon: PeopleIcon, prefix: '/team' },
+  { to: '/team', label: 'Team', icon: PeopleIcon, prefix: '/team' },
   { to: '/reports', label: 'Reports', icon: DocIcon, prefix: '/reports' },
-  { to: '/workspace/INC-041', label: 'Work page', icon: ToolsIcon, prefix: '/workspace' },
+  { to: workspaceTo, label: 'Workspace', icon: ToolsIcon, prefix: '/workspace' },
 ]
 
 /**
- * @param {{ user?: { name: string, email?: string }, logoSrc?: string }} props
+ * Fixed 220px workspace sidebar — labels always visible.
+ *
+ * @param {{ user?: { name?: string, email?: string, role?: string }, logoSrc?: string, workspaceTo?: string }} props
  */
-export function AppSidebar({ user, logoSrc = '/favi.png' }) {
+export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/workspace/INC-041' }) {
   const { pathname } = useLocation()
+  const items = NAV(workspaceTo)
+  const roleLabel = user?.role ?? 'Member'
 
   return (
-    <aside
-      className="hidden md:flex h-screen w-[248px] shrink-0 flex-col overflow-hidden z-40 rounded-tr-[28px] shadow-lg shadow-indigo-950/10"
-      style={{ background: SIDEBAR_BG }}
+    <div
+      className="box-border z-40 hidden h-full min-h-0 shrink-0 flex-col pt-6 pb-0 md:flex md:flex-col"
+      style={{ width: W_SIDEBAR }}
     >
-      {/* Brand — small favicon tile (same footprint as previous “R”), large wordmark */}
-      <div className="flex shrink-0 items-center gap-2.5 px-5 pt-6 pb-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/95 p-0.5 shadow-sm ring-1 ring-white/35">
-          <img
-            src={logoSrc}
-            alt=""
-            width={36}
-            height={36}
-            className="h-full w-full object-contain"
-            decoding="async"
-          />
-        </div>
-        <div className="flex min-w-0 flex-col gap-1">
-          <span className="text-[1.625rem] font-extrabold leading-[1.05] tracking-tight text-white md:text-[1.875rem]">
-            Resolver
-          </span>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75 md:text-xs">
+      <header className="flex shrink-0 items-center gap-2.5 px-1 pb-3">
+        <NavLink
+          to="/dashboard"
+          end
+          title="Dashboard"
+          className={({ isActive }) =>
+            [
+              'flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1 shadow-sm ring-1 ring-white/30 transition-shadow',
+              isActive ? 'ring-2 ring-white' : 'hover:ring-white/60',
+            ].join(' ')
+          }
+        >
+          <img src={logoSrc} alt="" width={36} height={36} className="h-9 w-9 object-contain" decoding="async" />
+        </NavLink>
+        <div className="min-w-0">
+          <span className="block truncate text-lg font-bold leading-tight tracking-tight text-white">Resolver</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/75">
             Incident response
           </span>
         </div>
-      </div>
+      </header>
 
-      {/* Box-style nav */}
-      <nav className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain px-3 pb-4">
-        {NAV.map(({ to, label, icon: Icon, prefix }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => {
-              const active = prefix ? pathname.startsWith(prefix) : isActive
-              return [
-                'group flex items-center gap-3 rounded-xl px-4 py-3.5 text-[13px] font-semibold transition-all duration-150 border',
-                active
-                  ? 'bg-white text-[#312e81] border-white shadow-md'
-                  : 'bg-white/10 text-white border-white/10 hover:bg-white/20 hover:border-white/25',
-              ].join(' ')
-            }}
-          >
-            <span className="opacity-90 group-[.bg-white]:opacity-100">
-              <Icon size={18} />
-            </span>
-            <span className="truncate">{label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Profile — bottom of sidebar */}
       <div
-        className="mt-auto px-3 pt-3 pb-5 border-t flex items-center gap-3"
-        style={{ borderColor: 'rgba(255,255,255,0.15)' }}
+        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-tr-[20px] border border-white/10 shadow-lg"
+        style={{ background: SIDEBAR_BG }}
       >
-        <Avatar
-          name={user?.name ?? 'User'}
-          size={40}
-          colorOverride="#ffffff"
-          foreground="#4338ca"
-          className="ring-2 ring-white/50 shrink-0 shadow-sm"
-        />
-        <div className="flex flex-col min-w-0">
-          <span className="text-[13px] font-semibold text-white truncate">{user?.name ?? 'User'}</span>
-          <span className="text-[11px] text-white/65 truncate">{user?.email ?? ''}</span>
-        </div>
+        <aside className="flex min-h-0 flex-1 flex-col overflow-hidden" style={{ background: SIDEBAR_BG }}>
+          <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-3 pb-4 pt-5">
+            {items.map(({ to, label, icon: Icon, prefix }) => (
+              <NavLink
+                key={label}
+                to={to}
+                className={({ isActive }) => {
+                  const active = prefix ? pathname.startsWith(prefix) : isActive
+                  return [
+                    'group flex items-center gap-3 rounded-[8px] px-3 py-3 text-[13px] font-semibold transition-colors border',
+                    active
+                      ? 'border-white bg-white text-[#312e81] shadow-md'
+                      : 'border-white/10 bg-white/10 text-white hover:bg-white/20',
+                  ].join(' ')
+                }}
+              >
+                <Icon size={18} />
+                <span className="truncate">{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div
+            className="mt-auto flex items-center gap-3 border-t border-white/15 px-3 py-3"
+            style={{ borderColor: 'rgba(255,255,255,0.15)' }}
+          >
+            <Avatar
+              name={user?.name ?? 'User'}
+              size={40}
+              colorOverride="#ffffff"
+              foreground="var(--sidebar-bg, #3730a3)"
+              className="ring-2 ring-white/40 shrink-0 shadow-sm"
+            />
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-semibold text-white">{user?.name ?? 'User'}</span>
+              <span className="mt-1 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">
+                {roleLabel}
+              </span>
+            </div>
+          </div>
+        </aside>
       </div>
-    </aside>
+    </div>
   )
 }
 
 function GridIcon({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="shrink-0">
-      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".85" />
-      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".85" />
-      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".85" />
-      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".85" />
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".9" />
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity=".9" />
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".9" />
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity=".9" />
     </svg>
   )
 }
@@ -123,7 +134,12 @@ function ChatIcon({ size = 16 }) {
 function DocIcon({ size = 16 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="shrink-0">
-      <path d="M3 1.5h7l3 3v10a1 1 0 01-1 1H3a1 1 0 01-1-1v-12a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path
+        d="M3 1.5h7l3 3v10a1 1 0 01-1 1H3a1 1 0 01-1-1v-12a1 1 0 011-1z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
       <path d="M10 1.5v3h3M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   )

@@ -1,8 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '@resolver/ui'
 
-const REPORTS_DATA = {
-  r1: {
+const REPORT_BODY = {
     title: 'Payment service outage — 45 minutes downtime',
     status: 'published',
     date: 'May 1, 2026',
@@ -31,13 +30,20 @@ const REPORTS_DATA = {
       'Add circuit breaker to payment service to fail-fast gracefully',
     ],
     aiIdentified: true,
-  },
+}
+
+const REPORTS_DATA = {
+  r1: REPORT_BODY,
+  'INC-038': REPORT_BODY,
+  'INC-037': REPORT_BODY,
+  'INC-034': REPORT_BODY,
+  'INC-028': REPORT_BODY,
 }
 
 export default function ReportDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const report = REPORTS_DATA[id] ?? REPORTS_DATA.r1
+  const report = REPORTS_DATA[id] ?? REPORT_BODY
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto bg-white">

@@ -11,8 +11,6 @@ import ReportDetail from './pages/ReportDetail.jsx'
 export default function App() {
   return (
     <Routes>
-      <Route path="/reports/:id" element={<ReportDetail />} />
-
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard"             element={<Dashboard />} />
@@ -22,6 +20,7 @@ export default function App() {
         <Route path="/team/:userId"          element={<Profile />} />
         <Route path="/messages"              element={<Messages />} />
         <Route path="/reports"               element={<Reports />} />
+        <Route path="/reports/:id"           element={<ReportDetail />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

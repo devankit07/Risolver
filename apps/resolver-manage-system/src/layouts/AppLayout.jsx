@@ -1,6 +1,7 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, NavLink } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { AppSidebar, AppTopbar } from '@resolver/ui'
+import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
+import { LayoutDashboard, MessageSquare, Users, FileText, Briefcase } from 'lucide-react'
 
 const PAGE_META = {
   '/dashboard': {
@@ -44,17 +45,20 @@ function metaForPath(pathname) {
 export default function AppLayout() {
   const { pathname } = useLocation()
   const user = useSelector((s)=> s.auth.user)
+  /** @type {{ id: string }[]} */
+  const incidents = useSelector((s) => s.incidents?.list ?? [])
+  const workspaceTo = `/workspace/${incidents[0]?.id ?? 'INC-041'}`
 
   const meta = metaForPath(pathname)
   const isDashboard = pathname === '/dashboard' || pathname === '/'
   const firstName = user?.name?.split(/\s+/)[0] ?? 'there'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <AppSidebar user={user} />
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-base,#f8fafc)]">
+      <AppSidebar user={user} workspaceTo={workspaceTo} />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 px-4 pt-4 md:px-6 md:pt-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-14 md:pb-0">
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-4 md:px-6 md:pb-8 md:pt-6">
           <AppTopbar
             mode={isDashboard ? 'welcome' : 'page'}
             title={meta.title}
@@ -64,11 +68,62 @@ export default function AppLayout() {
             notificationCount={3}
             searchPlaceholder="Search incidents…"
           />
-        </div>
-        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 md:px-6 md:pb-8">
-          <Outlet />
+          <MotionPage>
+            <Outlet />
+          </MotionPage>
         </main>
       </div>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-[var(--border,#e2e8f0)] bg-white shadow-[0_-2px_10px_rgba(15,23,42,0.06)] md:hidden"
+        aria-label="Primary"
+      >
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <LayoutDashboard className="h-5 w-5" />
+          Home
+        </NavLink>
+        <NavLink
+          to="/messages"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <MessageSquare className="h-5 w-5" />
+          Chat
+        </NavLink>
+        <NavLink
+          to="/team"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <Users className="h-5 w-5" />
+          Team
+        </NavLink>
+        <NavLink
+          to="/reports"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <FileText className="h-5 w-5" />
+          Reports
+        </NavLink>
+        <NavLink
+          to={workspaceTo}
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <Briefcase className="h-5 w-5" />
+          Work
+        </NavLink>
+      </nav>
     </div>
   )
 }
