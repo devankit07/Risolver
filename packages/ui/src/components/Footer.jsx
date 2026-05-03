@@ -48,7 +48,7 @@ export function Footer() {
     <footer className="bg-white">
       <div className="mx-auto max-w-7xl overflow-x-auto px-6 py-14">
         <div className="grid min-w-[1120px] grid-cols-[220px_1fr_1fr_1fr_1fr] items-start gap-10">
-          <div>
+          <div className="flex flex-col items-start gap-5">
             <Link to="/" className="inline-flex items-center" aria-label="Resolver — home">
               <img
                 src="/logo.png"
@@ -59,10 +59,8 @@ export function Footer() {
                 decoding="async"
               />
             </Link>
-            <p className="mt-12 text-sm leading-relaxed text-slate-800">
-              © 2026 Resolver Technology Ltd.
-              <br />
-              All rights reserved.
+            <p className="max-w-[15rem] text-left text-sm leading-relaxed text-slate-800 text-balance">
+              © 2026 Resolver Technology Ltd. All rights reserved.
             </p>
           </div>
 

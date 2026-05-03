@@ -22,8 +22,9 @@ export function OrbitCta({
   containerClassName = '',
 }) {
   return (
-    <section className={`flex min-h-[500px] items-center bg-white px-6 py-20 ${containerClassName}`}>
-      <div className="mx-auto grid w-full max-w-7xl items-center gap-14 md:grid-cols-2">
+    <section className={`flex min-h-[500px] items-center overflow-x-visible bg-white py-20 ${containerClassName}`}>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <div className="grid w-full items-center gap-14 md:grid-cols-2">
         <motion.div
           className="md:pl-10 lg:pl-16"
           initial={{ opacity: 0, y: 20 }}
@@ -47,19 +48,19 @@ export function OrbitCta({
         </motion.div>
 
         <motion.div
-          className="relative mx-auto flex h-[320px] w-full max-w-[360px] items-center justify-center"
+          className="relative mx-auto flex min-h-[340px] w-full max-w-[min(100%,420px)] items-center justify-center px-2 py-4 sm:min-h-[360px] sm:max-w-[440px] sm:px-4"
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.5 }}
         >
           <motion.div
-            className="absolute h-[310px] w-[310px] rounded-full border border-indigo-100 bg-indigo-50/35"
+            className="absolute h-[min(78vw,310px)] w-[min(78vw,310px)] max-h-[310px] max-w-[310px] rounded-full border border-indigo-100 bg-indigo-50/35"
             animate={{ rotate: 360 }}
             transition={{ duration: 42, repeat: Infinity, ease: 'linear' }}
           />
           <motion.div
-            className="absolute h-[220px] w-[220px] rounded-full border border-indigo-200 bg-white/70"
+            className="absolute h-[min(56vw,220px)] w-[min(56vw,220px)] max-h-[220px] max-w-[220px] rounded-full border border-indigo-200 bg-white/70"
             animate={{ rotate: -360 }}
             transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
           />
@@ -76,14 +77,26 @@ export function OrbitCta({
           </div>
 
           {[
-            { label: labels[0] ?? 'AI triage', pos: 'left-0 top-1/2 -translate-y-1/2' },
-            { label: labels[1] ?? 'Live updates', pos: 'right-0 top-1/2 -translate-y-1/2' },
-            { label: labels[2] ?? 'Postmortem', pos: 'left-1/2 top-2 -translate-x-1/2' },
-            { label: labels[3] ?? 'Assign team', pos: 'left-1/2 bottom-2 -translate-x-1/2' },
+            {
+              label: labels[0] ?? 'AI triage',
+              pos: 'left-3 top-1/2 z-20 -translate-y-1/2 sm:left-2 md:left-0',
+            },
+            {
+              label: labels[1] ?? 'Live updates',
+              pos: 'right-3 top-1/2 z-20 -translate-y-1/2 sm:right-2 md:right-0',
+            },
+            {
+              label: labels[2] ?? 'Postmortem',
+              pos: 'left-1/2 top-4 z-20 max-w-[calc(100%-2rem)] -translate-x-1/2 sm:top-3',
+            },
+            {
+              label: labels[3] ?? 'Assign team',
+              pos: 'bottom-4 left-1/2 z-20 max-w-[calc(100%-2rem)] -translate-x-1/2 sm:bottom-3',
+            },
           ].map((node, idx) => (
             <motion.span
               key={node.label}
-              className={`absolute ${node.pos} inline-flex items-center rounded-full border border-indigo-200 bg-white px-3 py-1 text-xs font-semibold text-indigo-600 shadow-sm`}
+              className={`absolute ${node.pos} inline-flex max-w-[11rem] items-center justify-center whitespace-nowrap rounded-full border border-indigo-200 bg-white px-3 py-1 text-center text-[11px] font-semibold text-indigo-600 shadow-sm sm:text-xs`}
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 2.2, repeat: Infinity, delay: idx * 0.25 }}
             >
@@ -91,6 +104,7 @@ export function OrbitCta({
             </motion.span>
           ))}
         </motion.div>
+        </div>
       </div>
     </section>
   )

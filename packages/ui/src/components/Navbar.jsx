@@ -7,7 +7,7 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/docs', label: 'Docs' },
   { to: '/pricing', label: 'Pricing' },
-  { to: '/contact', label: 'Contact' },
+
   { to: '/about', label: 'About' },
 ]
 
@@ -136,9 +136,9 @@ export function Navbar({ user, onLogout }) {
           <img
             src="/logo.png"
             alt="Resolver"
-            width={320}
-            height={72}
-            className="h-11 w-auto max-h-12 max-w-[min(72vw,320px)] object-contain object-left sm:h-12 sm:max-h-14 md:h-14"
+            width={400}
+            height={90}
+            className="h-12 w-auto max-h-14 max-w-[min(85vw,400px)] object-contain object-left sm:h-14 sm:max-h-16 md:h-16 md:max-h-[4.5rem] lg:max-w-[min(90vw,440px)]"
             decoding="async"
           />
         </NavLink>
@@ -164,6 +164,7 @@ export function Navbar({ user, onLogout }) {
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
             <>
+              <UserMenu user={user} onLogout={onLogout} />
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
@@ -172,7 +173,6 @@ export function Navbar({ user, onLogout }) {
               >
                 Contact
               </NavLink>
-              <UserMenu user={user} onLogout={onLogout} />
             </>
           ) : (
             <>
@@ -242,6 +242,13 @@ export function Navbar({ user, onLogout }) {
                         <p className="text-xs text-slate-500">{user.role} · {user.role === 'admin' ? 'Creator' : 'Responder'}</p>
                       </div>
                     </div>
+                    <NavLink
+                      to="/contact"
+                      onClick={() => setOpen(false)}
+                      className="block py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900"
+                    >
+                      Contact
+                    </NavLink>
                     <button
                       type="button"
                       onClick={() => { setOpen(false); onLogout?.() }}
