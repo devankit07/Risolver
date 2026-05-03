@@ -43,7 +43,7 @@ function metaForPath(pathname) {
 
 export default function AppLayout() {
   const { pathname } = useLocation()
-  const user = useSelector((s) => s.auth.user)
+  const user = useSelector((s)=> s.auth.user)
 
   const meta = metaForPath(pathname)
   const isDashboard = pathname === '/dashboard' || pathname === '/'
