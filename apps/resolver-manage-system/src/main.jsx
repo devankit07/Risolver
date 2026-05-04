@@ -12,10 +12,13 @@ import App from './App.jsx'
 hydrateAuthFromStorage(store)
 refreshAuthFromApi(store)
 
+const routerBasename =
+  import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '')
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
-      <BrowserRouter basename="/app">
+      <BrowserRouter basename={routerBasename}>
         <App />
       </BrowserRouter>
     </Provider>

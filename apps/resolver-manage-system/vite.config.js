@@ -5,9 +5,25 @@ import { fileURLToPath } from 'node:url'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
+/**
+ * Public URL path where this app is hosted.
+ * - Railway (Express mounts app at /app): omit VITE_BASE_PATH or use /app — default is /app/
+ * - Vercel (deploy at project URL root): set VITE_BASE_PATH=/ in Environment Variables and redeploy
+ */
+function viteBase() {
+  const raw = process.env.VITE_BASE_PATH
+  if (raw === undefined || raw === null) {
+    return '/app/'
+  }
+  const t = String(raw).trim()
+  if (t === '' || t === '/') return '/'
+  const withLeading = t.startsWith('/') ? t : `/${t}`
+  return withLeading.endsWith('/') ? withLeading : `${withLeading}/`
+}
+
 export default defineConfig({
   plugins: [react()],
-  base: '/app/',
+  base: viteBase(),
   build: {
     outDir: 'dist',
     emptyOutDir: true,
