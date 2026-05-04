@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = getApiBaseUrl()
-
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -52,7 +50,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(async ({ name, email, password, organizationName }) => {
     /* capture email immediately — even if the call fails, login can pre-fill it */
     localStorage.setItem('resolver_last_email', email.trim())
-    const res = await fetch(`${API}/auth/register`, {
+    const res = await fetch(`${getApiBaseUrl()}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -68,7 +66,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async ({ email, password }) => {
     /* capture email immediately */
     localStorage.setItem('resolver_last_email', email.trim())
-    const res = await fetch(`${API}/auth/login`, {
+    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -83,7 +81,7 @@ export function AuthProvider({ children }) {
   /** Logout */
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API}/auth/logout`, {
+      await fetch(`${getApiBaseUrl()}/auth/logout`, {
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })

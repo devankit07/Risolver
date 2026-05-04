@@ -8,6 +8,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl()
   let token = localStorage.getItem('manage_token')
   if (!token) {
     try {

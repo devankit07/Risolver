@@ -1,8 +1,6 @@
 import { hydrateAuth } from './store/authSlice.js'
 import { getApiBaseUrl } from './config/apiUrl.js'
 
-const API = getApiBaseUrl()
-
 /** Refresh user (incl. organizationName) from GET /api/auth/me when a token exists. */
 export function refreshAuthFromApi(store) {
   if (typeof localStorage === 'undefined') return
@@ -21,7 +19,7 @@ export function refreshAuthFromApi(store) {
 
   if (!token) return
 
-  void fetch(`${API}/auth/me`, {
+  void fetch(`${getApiBaseUrl()}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
     credentials: 'include',
   })

@@ -6,8 +6,6 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { Link } from 'react-router-dom'
 import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = getApiBaseUrl()
-
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -77,7 +75,7 @@ export const Contact = () => {
     setStatus('loading')
     setErrorMsg('')
     try {
-      const res = await fetch(`${API}/contact`, {
+      const res = await fetch(`${getApiBaseUrl()}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -9,8 +9,6 @@ import { hydrateAuth } from '../store/authSlice.js'
 import api from '../services/api.js'
 import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = getApiBaseUrl()
-
 // ─── Animated left panel (matches website design) ────────────────────────────
 
 function AuthLeftPanel() {
@@ -122,7 +120,7 @@ function EmailLoginForm({ onSuccess }) {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -183,7 +181,7 @@ function InviteLoginForm({ onSuccess }) {
     const rawId = inviteId.trim().toUpperCase()
     const email = `${rawId.toLowerCase()}@invite.resolver.local`
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
