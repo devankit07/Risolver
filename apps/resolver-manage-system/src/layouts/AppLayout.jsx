@@ -66,7 +66,8 @@ export default function AppLayout() {
     localStorage.removeItem('manage_user')
     localStorage.removeItem('resolver_token')
     localStorage.removeItem('resolver_user')
-    window.location.href = import.meta.env.VITE_WEBSITE_URL || 'https://server-production-a2c4.up.railway.app'
+    window.location.href =
+      import.meta.env.VITE_WEBSITE_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '/')
   }, [user, dispatch])
 
   /** @type {{ id: string }[]} */

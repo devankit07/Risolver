@@ -9,7 +9,7 @@ const httpServer = createServer(app)
 function socketCorsAllowed(origin) {
   if (!origin) return true
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true
-  if (origin === 'https://server-production-a2c4.up.railway.app') return true
+  if (/^https:\/\/([a-z0-9-]+)\.onrender\.com$/i.test(origin)) return true
   if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true
   const extra = (process.env.CORS_EXTRA_ORIGINS ?? '')
     .split(',')

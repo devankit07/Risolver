@@ -1,13 +1,14 @@
 /**
- * Single source for API base URL. Vercel must set VITE_API_URL to the full Railway URL, e.g.
- *   https://server-production-a2c4.up.railway.app/api
+ * Single source for API base URL. Vercel should set VITE_API_URL, e.g.
+ *   https://risolver.onrender.com/api
  * Accepts missing `https://` and missing `/api` suffix (fixes common dashboard typos).
  */
 export function getApiBaseUrl() {
   const devFallback = 'http://localhost:5173/api'
+  const prodFallback = 'https://risolver.onrender.com/api'
   const raw = import.meta.env.VITE_API_URL
   if (raw === undefined || raw === null || String(raw).trim() === '') {
-    return devFallback
+    return import.meta.env.PROD ? prodFallback : devFallback
   }
   let s = String(raw).trim()
   if (!/^https?:\/\//i.test(s)) {

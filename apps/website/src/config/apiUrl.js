@@ -1,12 +1,13 @@
 /**
- * VITE_API_URL on Vercel: https://YOUR-SERVICE.up.railway.app/api
+ * VITE_API_URL on Vercel: https://<api-host>/api (e.g. Render or Railway).
  * Prepends https:// and /api if omitted (reduces misconfigured deploys).
  */
 export function getApiBaseUrl() {
   const devFallback = 'http://localhost:5173/api'
+  const prodFallback = 'https://risolver.onrender.com/api'
   const raw = import.meta.env.VITE_API_URL
   if (raw === undefined || raw === null || String(raw).trim() === '') {
-    return devFallback
+    return import.meta.env.PROD ? prodFallback : devFallback
   }
   let s = String(raw).trim()
   if (!/^https?:\/\//i.test(s)) {
