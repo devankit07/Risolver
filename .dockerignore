@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+.git
+.gitignore
+**/dist
+.env
+**/.env
+**/.env.*
+!.env.example
+.cursor
+*.md
+terminals
+coverage
+.DS_Store
