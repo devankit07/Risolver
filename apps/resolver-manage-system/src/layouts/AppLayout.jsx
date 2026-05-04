@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Outlet, useLocation, NavLink, Navigate } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
 import { LayoutDashboard, MessageSquare, Users, FileText, Briefcase } from 'lucide-react'
+import { clearAuth } from '../store/authSlice.js'
+import api from '../services/api.js'
 
 const PAGE_META = {
   '/dashboard': {
@@ -50,8 +52,22 @@ function metaForPath(pathname) {
 
 export default function AppLayout() {
   const { pathname } = useLocation()
+  const dispatch = useDispatch()
   const user = useSelector((s) => s.auth.user)
   const token = useSelector((s) => s.auth.token)
+
+  const handleLogout = useCallback(async () => {
+    const uid = user?._id ?? user?.id
+    if (uid) {
+      void api.patch(`/users/${uid}/status`, { status: 'offline' }).catch(() => {})
+    }
+    dispatch(clearAuth())
+    localStorage.removeItem('manage_token')
+    localStorage.removeItem('manage_user')
+    localStorage.removeItem('resolver_token')
+    localStorage.removeItem('resolver_user')
+    window.location.href = import.meta.env.VITE_WEBSITE_URL || 'https://server-production-a2c4.up.railway.app'
+  }, [user, dispatch])
 
   /** @type {{ id: string }[]} */
   const incidents = useSelector((s) => s.incidents?.list ?? [])
@@ -85,7 +101,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg-base,#f8fafc)]">
-      <AppSidebar user={user} workspaceTo={workspaceTo} />
+      <AppSidebar user={user} workspaceTo={workspaceTo} onLogout={handleLogout} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-14 md:pb-0">
         <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-4 md:px-6 md:pb-8 md:pt-6">

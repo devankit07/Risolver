@@ -9,13 +9,18 @@ const httpServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
     origin(origin, cb) {
-      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      if (
+        !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        origin === 'https://server-production-a2c4.up.railway.app'
+      ) {
         cb(null, true)
       } else {
         cb(null, false)
       }
     },
     credentials: true,
+    methods: ['GET', 'POST'],
   },
 })
 

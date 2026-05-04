@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRouter from "./routes/auth.routes.js";
 import inviteRouter from "./routes/invite.route.js";
 import inviteCredRouter from "./routes/inviteCredential.routes.js";
@@ -16,6 +18,9 @@ import broadcastRouter from "./routes/broadcast.routes.js";
 import incidentsRouter from "./routes/incidents.routes.js";
 import postmortemsRouter from "./routes/postmortems.routes.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 /* ── health check (no auth, no DB needed) ── */
@@ -27,21 +32,26 @@ app.get("/health", (_req, res) => {
 app.use(
   cors({
     origin(origin, callback) {
-      /* allow same-machine requests and no-origin (curl, Postman) */
-      if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      if (
+        !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        origin === "https://server-production-a2c4.up.railway.app"
+      ) {
         callback(null, true);
         return;
       }
       callback(null, false);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
 app.use(cookieParser());
 app.use(express.json());
 
-/* ── Routes ── */
+/* ── API Routes ── */
 app.use("/api/auth", authRouter);
 app.use("/api/invite", inviteRouter);
 app.use("/api/invites", inviteCredRouter);
@@ -57,12 +67,12 @@ app.use("/api/broadcasts", broadcastRouter);
 app.use("/api/incidents", incidentsRouter);
 app.use("/api/postmortems", postmortemsRouter);
 
-/* ── 404 ── */
-app.use((_req, res) => {
+/* ── API 404 — must come before static files ── */
+app.use("/api", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
-/* ── Global error handler (always returns JSON, never HTML) ── */
+/* ── Global error handler ── */
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error("[unhandled error]", err);
@@ -71,6 +81,25 @@ app.use((err, _req, res, _next) => {
     success: false,
     message: err.message || "Internal server error",
   });
+});
+
+/* ── Static files ── */
+const MANAGE_DIST = path.join(
+  __dirname,
+  "../../../apps/resolver-manage-system/dist",
+);
+const WEBSITE_DIST = path.join(__dirname, "../../../apps/website/dist");
+
+app.use("/app", express.static(MANAGE_DIST));
+app.use("/", express.static(WEBSITE_DIST));
+
+/* ── SPA fallbacks ── */
+app.use("/app", (_req, res) => {
+  res.sendFile(path.join(MANAGE_DIST, "index.html"));
+});
+
+app.use((_req, res) => {
+  res.sendFile(path.join(WEBSITE_DIST, "index.html"));
 });
 
 export default app;

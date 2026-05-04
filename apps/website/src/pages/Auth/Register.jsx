@@ -42,7 +42,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await register({ name, email, password, organizationName: orgName })
-      navigate('/')
+      window.location.href = `${import.meta.env.VITE_MANAGE_URL || 'https://server-production-a2c4.up.railway.app/app'}/dashboard`
     } catch (err) {
       setError(err.message)
     } finally {

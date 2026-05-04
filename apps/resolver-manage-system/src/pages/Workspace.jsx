@@ -11,7 +11,7 @@ import {
 import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
 import { updateRealtimeIncident } from '../store/incidentsSlice.js'
 
-const API = import.meta.env.VITE_API_URL ?? ''
+const API = (import.meta.env.VITE_API_URL ?? '').replace('/api', '')
 
 export default function Workspace() {
   const { incidentId } = useParams()

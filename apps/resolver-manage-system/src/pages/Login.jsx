@@ -8,7 +8,7 @@ import {
 import { hydrateAuth } from '../store/authSlice.js'
 import api from '../services/api.js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173'
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173/api'
 
 // ─── Animated left panel (matches website design) ────────────────────────────
 
@@ -121,7 +121,7 @@ function EmailLoginForm({ onSuccess }) {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -182,7 +182,7 @@ function InviteLoginForm({ onSuccess }) {
     const rawId = inviteId.trim().toUpperCase()
     const email = `${rawId.toLowerCase()}@invite.resolver.local`
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

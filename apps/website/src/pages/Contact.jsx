@@ -5,7 +5,7 @@ import { MarketingPageShell } from '../components/MarketingPageShell.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Link } from 'react-router-dom'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5173'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5173/api'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
@@ -76,7 +76,7 @@ export const Contact = () => {
     setStatus('loading')
     setErrorMsg('')
     try {
-      const res = await fetch(`${API}/api/contact`, {
+      const res = await fetch(`${API}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

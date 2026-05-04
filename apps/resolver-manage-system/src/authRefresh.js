@@ -1,6 +1,6 @@
 import { hydrateAuth } from './store/authSlice.js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173'
+const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173/api'
 
 /** Refresh user (incl. organizationName) from GET /api/auth/me when a token exists. */
 export function refreshAuthFromApi(store) {
@@ -20,7 +20,7 @@ export function refreshAuthFromApi(store) {
 
   if (!token) return
 
-  void fetch(`${API}/api/auth/me`, {
+  void fetch(`${API}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
     credentials: 'include',
   })

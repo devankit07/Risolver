@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5173'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5173/api'
 
 const AuthContext = createContext(null)
 
@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(async ({ name, email, password, organizationName }) => {
     /* capture email immediately — even if the call fails, login can pre-fill it */
     localStorage.setItem('resolver_last_email', email.trim())
-    const res = await fetch(`${API}/api/auth/register`, {
+    const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async ({ email, password }) => {
     /* capture email immediately */
     localStorage.setItem('resolver_last_email', email.trim())
-    const res = await fetch(`${API}/api/auth/login`, {
+    const res = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
   /** Logout */
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API}/api/auth/logout`, {
+      await fetch(`${API}/auth/logout`, {
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })

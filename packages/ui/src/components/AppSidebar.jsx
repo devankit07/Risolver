@@ -16,7 +16,7 @@ const NAV = (workspaceTo) => [
 /**
  * Icon rail (72px) that expands to 220px on hover with labels + profile text.
  *
- * @param {{ user?: { name?: string, email?: string, role?: string } | null, logoSrc?: string, workspaceTo?: string }} props
+ * @param {{ user?: { name?: string, email?: string, role?: string } | null, logoSrc?: string, workspaceTo?: string, onLogout?: () => void }} props
  */
 const HOVER_LEAVE_MS = 140
 
@@ -25,7 +25,7 @@ function formatRoleLabel(role) {
   return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()
 }
 
-export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/dashboard' }) {
+export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/dashboard', onLogout }) {
   const { pathname } = useLocation()
   const items = NAV(workspaceTo)
   const roleLabel = formatRoleLabel(user?.role)
@@ -115,30 +115,41 @@ export function AppSidebar({ user, logoSrc = '/favi.png', workspaceTo = '/dashbo
           </nav>
 
           <div
-            className={`mt-auto flex min-w-0 items-center border-t border-white/15 py-3 transition-[padding,gap] duration-300 ease-out ${open ? 'gap-3 px-3' : 'gap-2 px-2'}`}
+            className={`mt-auto flex min-w-0 flex-col border-t border-white/15 transition-[padding] duration-300 ease-out ${open ? 'px-3 py-3' : 'px-2 py-3'}`}
             style={{ borderColor: 'rgba(255,255,255,0.15)' }}
           >
-            <Avatar
-              name={user?.name ?? 'User'}
-              size={40}
-              colorOverride="#ffffff"
-              foreground="var(--sidebar-bg, #3730a3)"
-              className="ring-2 ring-white/40 shrink-0 shadow-sm"
-            />
-            <div
-              className={`min-w-0 flex-1 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${open ? 'max-w-[200px] translate-x-0 opacity-100' : 'max-w-0 translate-x-[-4px] opacity-0'}`}
-              aria-hidden={!open}
-            >
-              <span className="block truncate text-[13px] font-semibold text-white">{user?.name ?? 'User'}</span>
-              {user?.email ? (
-                <span className="mt-0.5 block truncate text-[11px] font-normal text-white/80" title={user.email}>
-                  {user.email}
+            <div className={`flex min-w-0 items-center transition-[gap] duration-300 ease-out ${open ? 'gap-3' : 'gap-2'}`}>
+              <Avatar
+                name={user?.name ?? 'User'}
+                size={40}
+                colorOverride="#ffffff"
+                foreground="var(--sidebar-bg, #3730a3)"
+                className="ring-2 ring-white/40 shrink-0 shadow-sm"
+              />
+              <div
+                className={`min-w-0 flex-1 overflow-hidden transition-[max-width,opacity,transform] duration-300 ease-out ${open ? 'max-w-[200px] translate-x-0 opacity-100' : 'max-w-0 translate-x-[-4px] opacity-0'}`}
+                aria-hidden={!open}
+              >
+                <span className="block truncate text-[13px] font-semibold text-white">{user?.name ?? 'User'}</span>
+                {user?.email ? (
+                  <span className="mt-0.5 block truncate text-[11px] font-normal text-white/80" title={user.email}>
+                    {user.email}
+                  </span>
+                ) : null}
+                <span className="mt-1 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">
+                  {roleLabel}
                 </span>
-              ) : null}
-              <span className="mt-1 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">
-                {roleLabel}
-              </span>
+              </div>
             </div>
+            {onLogout && open && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="mt-3 w-full rounded-[6px] border border-white/20 py-1.5 text-[11px] font-semibold text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white"
+              >
+                Sign out
+              </button>
+            )}
           </div>
         </aside>
       </div>

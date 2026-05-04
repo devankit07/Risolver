@@ -7,6 +7,11 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
+  base: '/app/',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
