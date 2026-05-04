@@ -26,9 +26,11 @@ if (!process.env.JWT_SECRET) {
   console.warn("[config] JWT_SECRET unset — using a development placeholder");
 }
 
-/* Groq is optional for boot; AI routes need a real key at runtime */
+/* Groq: optional at boot so the API can start; AI routes need a key at runtime */
 if (!process.env.GROQ_API_KEY && isProduction) {
-  throw new Error("GROQ_API_KEY is not defined in environment variables");
+  console.warn(
+    "[config] GROQ_API_KEY unset — /api/ai and related routes will fail until the key is set",
+  );
 }
 
 export const config = {
