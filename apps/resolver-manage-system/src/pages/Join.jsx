@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import { hydrateAuth } from '../store/authSlice.js'
 import api from '../services/api.js'
+import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173/api'
+const API = getApiBaseUrl()
 
 const inputCls =
   'w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4 pl-12 text-sm text-slate-900 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-50 placeholder:text-slate-400'

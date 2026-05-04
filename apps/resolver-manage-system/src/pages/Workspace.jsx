@@ -10,8 +10,9 @@ import {
 } from '@resolver/ui'
 import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
 import { updateRealtimeIncident } from '../store/incidentsSlice.js'
+import { getSocketOrigin } from '../config/apiUrl.js'
 
-const API = (import.meta.env.VITE_API_URL ?? '').replace('/api', '')
+const API = getSocketOrigin()
 
 export default function Workspace() {
   const { incidentId } = useParams()

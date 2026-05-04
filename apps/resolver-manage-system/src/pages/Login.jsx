@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import { hydrateAuth } from '../store/authSlice.js'
 import api from '../services/api.js'
+import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:5173/api'
+const API = getApiBaseUrl()
 
 // ─── Animated left panel (matches website design) ────────────────────────────
 

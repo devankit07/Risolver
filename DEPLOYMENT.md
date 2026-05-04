@@ -79,3 +79,33 @@ Set **Preview** env vars in Vercel if you need previews to hit Railway + sibling
 4. All three frontends’ API calls use the same **`VITE_API_URL`** (Railway `/api` base).
 
 The backend allows **credentials** from `localhost`, your Railway host, and **`*.vercel.app`**. Custom domains: add **`CORS_EXTRA_ORIGINS`** on Railway.
+
+---
+
+## 6. Troubleshooting “not connected” / `ERR_NAME_NOT_RESOLVED`
+
+### Wrong API hostname in the browser
+
+If DevTools shows requests to something like `server-production-a2.up` or any host **without** `up.railway.app`, your **Vercel env var is wrong**.
+
+1. Open the **manage** (and **website**) project on Vercel → **Settings → Environment Variables**.
+2. Set **`VITE_API_URL`** to the **full** URL (copy from Railway → your service → **Networking**):
+
+   `https://server-production-a2c4.up.railway.app/api`
+
+   Include **`https://`**, the **full** subdomain (e.g. `a2c4`), and **`up.railway.app`**. End with **`/api`**.
+3. **Redeploy** the Vercel project after saving (env is applied at **build** time).
+
+Do **not** put `VITE_*` variables on **Railway** — they are only for Vercel builds. On Railway use **`MANAGE_URL`**, **`MONGO_URI`**, etc.
+
+### Railway shows “Nixpacks” and empty build/start
+
+Your deploy should use the repo’s **`Dockerfile`** and **`railway.json`**. In **Railway → Settings → Build**, clear any custom build/start that overrides the file. Connect the same **GitHub repo/branch** that contains `Dockerfile` at the **repository root**, and set **Root Directory** to **empty**.
+
+### Health check
+
+Use **`/health`**, not only `/`, for a dedicated check. `GET /` still returns JSON but **`/health`** is best for monitoring.
+
+### DNS / “site can’t be reached” to Railway
+
+If the service **crashed** or **never deployed**, the `*.up.railway.app` name may not resolve. Fix the **deploy logs** first; when the container is **running**, open `https://<your-service>.up.railway.app/health` in a new tab.

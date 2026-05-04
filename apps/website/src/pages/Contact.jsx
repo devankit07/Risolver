@@ -4,8 +4,9 @@ import { ShieldCheck, CheckCircle2, SendHorizonal, Zap, Clock, Lock, MessageCirc
 import { MarketingPageShell } from '../components/MarketingPageShell.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Link } from 'react-router-dom'
+import { getApiBaseUrl } from '../config/apiUrl.js'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5173/api'
+const API = getApiBaseUrl()
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
