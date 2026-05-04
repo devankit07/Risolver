@@ -23,6 +23,19 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+function isAllowedCorsOrigin(origin) {
+  if (!origin) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
+  if (origin === "https://server-production-a2c4.up.railway.app") return true;
+  /* Manage UI on Vercel (production + preview) */
+  if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true;
+  const extra = (process.env.CORS_EXTRA_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return extra.includes(origin);
+}
+
 /* ── health check (no auth, no DB needed) ── */
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "resolver-api", ts: new Date().toISOString() });
@@ -32,15 +45,7 @@ app.get("/health", (_req, res) => {
 app.use(
   cors({
     origin(origin, callback) {
-      if (
-        !origin ||
-        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-        origin === "https://server-production-a2c4.up.railway.app"
-      ) {
-        callback(null, true);
-        return;
-      }
-      callback(null, false);
+      callback(null, isAllowedCorsOrigin(origin));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -83,21 +88,12 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-/* ── Static files ── */
-const MANAGE_DIST = path.join(
-  __dirname,
-  "../../../apps/resolver-manage-system/dist",
-);
+/* ── Static files (marketing website only — manage UI is hosted on Vercel) ── */
 const WEBSITE_DIST = path.join(__dirname, "../../../apps/website/dist");
 
-app.use("/app", express.static(MANAGE_DIST));
 app.use("/", express.static(WEBSITE_DIST));
 
-/* ── SPA fallbacks ── */
-app.use("/app", (_req, res) => {
-  res.sendFile(path.join(MANAGE_DIST, "index.html"));
-});
-
+/* ── SPA fallback (website) ── */
 app.use((_req, res) => {
   res.sendFile(path.join(WEBSITE_DIST, "index.html"));
 });

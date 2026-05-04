@@ -4,7 +4,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
-    "build": "pnpm --filter website build && pnpm --filter resolver-manage-system build",
+    "build": "pnpm --filter website build",
     "start": "node apps/backend/server.js",
     "dev:backend": "nodemon apps/backend/server.js",
     "lint": "pnpm -r run lint"
