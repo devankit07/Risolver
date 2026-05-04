@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import userModel from '../models/user.model.js'
 import incidentModel from '../models/incident.model.js'
 import notificationModel from '../models/notification.model.js'
@@ -114,37 +115,53 @@ export const updateUser = async (req, res) => {
 // ── PATCH /api/users/:id/status ───────────────────────────────────────────────
 
 export const updateUserStatus = async (req, res) => {
-  const { id } = req.params
-  const { status } = req.body
-  const orgId = req.user.organizationId
+  try {
+    const { id } = req.params
+    const { status } = req.body
+    const orgId = req.user.organizationId
 
-  const allowed = ['online', 'away', 'offline']
-  if (!allowed.includes(status)) {
-    return sendResponse(res, 400, false, 'Invalid status')
-  }
-
-  const user = await userModel.findOne({ _id: id, organizationId: orgId })
-  if (!user) return sendResponse(res, 404, false, 'User not found')
-
-  const isSelf = String(req.user._id) === String(user._id)
-  const isAdmin = req.user.role === 'admin'
-  if (!isSelf && !isAdmin) return sendResponse(res, 403, false, 'Forbidden')
-
-  if (user.status !== status) {
-    user.status = status
-    user.lastActive = new Date()
-    await user.save()
-
-    const io = req.app.get('io')
-    if (io) {
-      io.to(String(orgId)).emit('user:status', {
-        userId: String(user._id),
-        status,
-      })
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendResponse(res, 400, false, 'Invalid user id')
     }
-  }
 
-  sendResponse(res, 200, true, 'Status updated', { status })
+    const allowed = ['online', 'away', 'offline']
+    if (!allowed.includes(status)) {
+      return sendResponse(res, 400, false, 'Invalid status')
+    }
+
+    const filter = { _id: id }
+    if (orgId != null) filter.organizationId = orgId
+
+    const user = await userModel.findOne(filter)
+    if (!user) return sendResponse(res, 404, false, 'User not found')
+
+    const isSelf = String(req.user._id) === String(user._id)
+    const isAdmin = req.user.role === 'admin'
+    if (!isSelf && !isAdmin) return sendResponse(res, 403, false, 'Forbidden')
+
+    if (user.status !== status) {
+      user.status = status
+      user.lastActive = new Date()
+      await user.save()
+
+      const io = req.app.get('io')
+      if (io && orgId != null) {
+        try {
+          io.to(String(orgId)).emit('user:status', {
+            userId: String(user._id),
+            status,
+          })
+        } catch (e) {
+          console.warn('[user status] socket emit failed', e?.message ?? e)
+        }
+      }
+    }
+
+    sendResponse(res, 200, true, 'Status updated', { status })
+  } catch (err) {
+    console.error('[updateUserStatus]', err)
+    return sendResponse(res, 500, false, err.message || 'Could not update status')
+  }
 }
 
 // ── DELETE /api/users/:id ─────────────────────────────────────────────────────

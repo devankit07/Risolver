@@ -17,5 +17,9 @@ export function getApiBaseUrl() {
   if (!/\/api$/i.test(s)) {
     s += '/api'
   }
+  /* Known removed Railway hostname from older env (ERR_NAME_NOT_RESOLVED in browser). */
+  if (import.meta.env.PROD && /server-production-a2c4\.up\.railway\.app/i.test(s)) {
+    return prodFallback
+  }
   return s
 }

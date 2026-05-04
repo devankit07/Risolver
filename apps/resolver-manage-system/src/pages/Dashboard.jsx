@@ -166,13 +166,13 @@ export default function Dashboard() {
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <div className="flex h-[260px] w-full min-h-[220px] items-center justify-center">
+          <div className="flex h-[260px] w-full min-h-[220px] min-w-0 items-center justify-center">
             {chartLoading ? (
               <div className="h-full w-full animate-pulse rounded-[8px] bg-slate-100" />
             ) : chart.length === 0 ? (
               <p className="text-[13px] text-[var(--text-secondary,#64748b)]">No incident trend data yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border,#e2e8f0)" />
                   <XAxis

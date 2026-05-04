@@ -18,6 +18,9 @@ export function getApiBaseUrl() {
   if (!/\/api$/i.test(s)) {
     s += '/api'
   }
+  if (import.meta.env.PROD && /server-production-a2c4\.up\.railway\.app/i.test(s)) {
+    return prodFallback
+  }
   return s
 }
 
