@@ -1,8 +1,6 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
 import authRouter from "./routes/auth.routes.js";
 import inviteRouter from "./routes/invite.route.js";
 import inviteCredRouter from "./routes/inviteCredential.routes.js";
@@ -18,16 +16,13 @@ import broadcastRouter from "./routes/broadcast.routes.js";
 import incidentsRouter from "./routes/incidents.routes.js";
 import postmortemsRouter from "./routes/postmortems.routes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 
 function isAllowedCorsOrigin(origin) {
   if (!origin) return true;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
   if (origin === "https://server-production-a2c4.up.railway.app") return true;
-  /* Manage UI on Vercel (production + preview) */
+  /* Frontends on Vercel (production + preview) */
   if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true;
   const extra = (process.env.CORS_EXTRA_ORIGINS ?? "")
     .split(",")
@@ -39,6 +34,16 @@ function isAllowedCorsOrigin(origin) {
 /* ── health check (no auth, no DB needed) ── */
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "resolver-api", ts: new Date().toISOString() });
+});
+
+/* Root: API only — marketing + manage apps are on Vercel */
+app.get("/", (_req, res) => {
+  res.json({
+    service: "resolver-api",
+    health: "/health",
+    api: "/api",
+    note: "Web apps are deployed separately (e.g. Vercel).",
+  });
 });
 
 /* ── CORS ── */
@@ -56,7 +61,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
-/* ── API Routes ── */
+/* ── API routes ── */
 app.use("/api/auth", authRouter);
 app.use("/api/invite", inviteRouter);
 app.use("/api/invites", inviteCredRouter);
@@ -72,7 +77,7 @@ app.use("/api/broadcasts", broadcastRouter);
 app.use("/api/incidents", incidentsRouter);
 app.use("/api/postmortems", postmortemsRouter);
 
-/* ── API 404 — must come before static files ── */
+/* ── API 404 ── */
 app.use("/api", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
@@ -88,14 +93,12 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-/* ── Static files (marketing website only — manage UI is hosted on Vercel) ── */
-const WEBSITE_DIST = path.join(__dirname, "../../../apps/website/dist");
-
-app.use("/", express.static(WEBSITE_DIST));
-
-/* ── SPA fallback (website) ── */
+/* Non-API paths: no static frontends (those are on Vercel) */
 app.use((_req, res) => {
-  res.sendFile(path.join(WEBSITE_DIST, "index.html"));
+  res.status(404).json({
+    success: false,
+    message: "Not found. This host is API-only; use your Vercel URL for the web app.",
+  });
 });
 
 export default app;

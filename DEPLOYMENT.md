@@ -11,9 +11,10 @@ This repo is a **pnpm workspace**. Lockfile and `pnpm-workspace.yaml` live at th
 
 ### What runs
 
-- **Build:** root `Dockerfile` (see `railway.json`).
+- **Build:** root `Dockerfile` — installs the monorepo and **does not** build Vite frontends; Railway is **API-only**.
 - **Start:** `node apps/backend/server.js`
 - **Health check:** `GET /health`
+- **Root** `GET /` returns a small JSON payload (not the marketing site). The website and manage app **only** live on Vercel.
 
 ### Environment variables (Variables tab)
 
