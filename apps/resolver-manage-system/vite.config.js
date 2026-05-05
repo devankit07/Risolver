@@ -20,7 +20,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3001,
+    port: 3002,
     strictPort: false,
     fs: { allow: [path.resolve(dirname, '../../')] },
   },

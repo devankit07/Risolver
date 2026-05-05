@@ -61,8 +61,8 @@ export const generateCredentials = async (req, res) => {
     status: 'offline',
   })
 
-  const manageUrl = process.env.MANAGE_URL || 'http://localhost:3001'
-  const shareLink = `${manageUrl}/join?id=${inviteId}`
+  const websiteUrl = process.env.VITE_WEBSITE_URL || 'http://localhost:3000'
+  const shareLink = `${websiteUrl}/join?id=${inviteId}`
 
   await inviteModel.create({
     inviteId,
@@ -188,12 +188,18 @@ export const validateInvite = async (req, res) => {
 // ── POST /api/invites/setup ───────────────────────────────────────────────────
 
 export const setupInviteAccount = async (req, res) => {
-  const { inviteId, name, password } = req.body
+  const { inviteId, name, email, password } = req.body
 
   if (!inviteId?.trim()) return sendResponse(res, 400, false, 'inviteId is required')
   if (!name?.trim())     return sendResponse(res, 400, false, 'name is required')
+  if (!email?.trim())    return sendResponse(res, 400, false, 'email is required')
   if (!password || password.length < 6) {
     return sendResponse(res, 400, false, 'password must be at least 6 characters')
+  }
+
+  const existingUser = await userModel.findOne({ email: email.trim() })
+  if (existingUser && existingUser.inviteId !== inviteId.trim().toUpperCase()) {
+    return sendResponse(res, 400, false, 'Email is already in use by another account')
   }
 
   const invite = await inviteModel
@@ -208,15 +214,15 @@ export const setupInviteAccount = async (req, res) => {
     return sendResponse(res, 400, false, 'This invite has expired')
   }
 
-  const email = `${inviteId.trim().toLowerCase()}@invite.resolver.local`
   const user = await userModel.findOne({
-    email,
+    inviteId: invite.inviteId,
     organizationId: invite.organizationId._id ?? invite.organizationId,
   })
   if (!user) return sendResponse(res, 404, false, 'User account not found for this invite')
 
   const hashedPassword = await bcrypt.hash(password, 12)
   user.name = name.trim()
+  user.email = email.trim()
   user.password = hashedPassword
   await user.save()
 

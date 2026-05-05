@@ -42,7 +42,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await register({ name, email, password, organizationName: orgName })
-      window.location.href = `${import.meta.env.VITE_MANAGE_URL || 'http://localhost:3001'}/dashboard`
+      navigate('/')
     } catch (err) {
       setError(err.message)
     } finally {

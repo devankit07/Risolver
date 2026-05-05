@@ -55,8 +55,10 @@ export default function AppLayout() {
   const dispatch = useDispatch()
   const user = useSelector((s) => s.auth.user)
   const token = useSelector((s) => s.auth.token)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = useCallback(async () => {
+    setIsLoggingOut(true)
     const uid = user?._id ?? user?.id
     if (uid) {
       void api.patch(`/users/${uid}/status`, { status: 'offline' }).catch(() => {})
@@ -67,7 +69,7 @@ export default function AppLayout() {
     localStorage.removeItem('resolver_token')
     localStorage.removeItem('resolver_user')
     window.location.href =
-      import.meta.env.VITE_WEBSITE_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '/')
+      (import.meta.env.VITE_WEBSITE_URL || (import.meta.env.DEV ? 'http://localhost:3000' : '')) + '/?logout=true'
   }, [user, dispatch])
 
   /** @type {{ id: string }[]} */
@@ -91,6 +93,18 @@ export default function AppLayout() {
     } catch { /* ignore */ }
     return false
   })()
+
+  if (isLoggingOut) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-base,#f8fafc)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent,#4f46e5)] border-t-transparent" />
+          <p className="text-[13px] font-medium text-slate-500">Signing out...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!user && !hasToken) {
     return <Navigate to="/login" replace />
   }

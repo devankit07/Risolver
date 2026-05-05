@@ -4,11 +4,11 @@ import { useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 
-const MANAGE_URL = import.meta.env.VITE_MANAGE_URL || 'http://localhost:3001'
+const MANAGE_URL = `${import.meta.env.VITE_MANAGE_URL || 'http://localhost:3002'}/dashboard`
 
 export default function HeroSection() {
   const heroWordsRef = useRef(null)
-  const { user } = useAuth()
+  const { user, token } = useAuth()
 
   useLayoutEffect(() => {
     const root = heroWordsRef.current
@@ -72,7 +72,7 @@ export default function HeroSection() {
             /* ── logged-in CTAs ── */
             <>
               <a
-                href={MANAGE_URL}
+                href={token ? `${MANAGE_URL}?token=${encodeURIComponent(token)}&user=${encodeURIComponent(JSON.stringify(user))}` : MANAGE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
