@@ -29,11 +29,7 @@ export function hydrateAuthFromStorage(store) {
     const resolverRaw   = localStorage.getItem('resolver_user')
     const resolverToken = localStorage.getItem('resolver_token')
     if (resolverRaw && resolverToken) {
-      const user = JSON.parse(resolverRaw)
-      // Only let website sessions in for admin / manager roles
-      if (user?.role === 'admin' || user?.role === 'manager') {
-        store.dispatch(hydrateAuth({ user, token: resolverToken }))
-      }
+      store.dispatch(hydrateAuth({ user: JSON.parse(resolverRaw), token: resolverToken }))
     }
   } catch {
     /* ignore corrupt storage */

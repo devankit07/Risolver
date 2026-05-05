@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt'
 import inviteModel from '../models/invite.model.js'
 import userModel from '../models/user.model.js'
 import organizationModel from '../models/organization.model.js'
@@ -45,14 +44,13 @@ export const generateCredentials = async (req, res) => {
   if (!inviteId) return sendResponse(res, 500, false, 'Could not generate unique invite ID')
 
   const tempPassword = genTempPassword()
-  const hashedPassword = await bcrypt.hash(tempPassword, 12)
 
   const email = `${inviteId.toLowerCase()}@invite.resolver.local`
 
   await userModel.create({
     name: name.trim(),
     email,
-    password: hashedPassword,
+    password: tempPassword,
     role,
     specialization: specialization?.trim() || null,
     inviteId,
@@ -220,10 +218,9 @@ export const setupInviteAccount = async (req, res) => {
   })
   if (!user) return sendResponse(res, 404, false, 'User account not found for this invite')
 
-  const hashedPassword = await bcrypt.hash(password, 12)
   user.name = name.trim()
   user.email = email.trim()
-  user.password = hashedPassword
+  user.password = password
   await user.save()
 
   invite.status = 'used'
