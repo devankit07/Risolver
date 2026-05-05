@@ -15,6 +15,7 @@ function getGroq() {
 }
 
 export const generateIncidentSuggestion = async (userInput) => {
+  const groq = getGroq();
   const response = await groq.chat.completions.create({
     model: "llama-3.1-8b-instant",
     messages: [
