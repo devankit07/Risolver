@@ -9,7 +9,7 @@ import {
   AiTriageCard,
 } from '@resolver/ui'
 import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
-import { updateRealtimeIncident, updateIncidentStatusThunk } from '../store/incidentsSlice.js'
+import { updateRealtimeIncident } from '../store/incidentsSlice.js'
 import { getSocketOrigin } from '../config/apiUrl.js'
 
 const API = getSocketOrigin()
@@ -77,13 +77,8 @@ export default function Workspace() {
     setUpdateText('')
   }
 
-  async function handleResolve() {
-    try {
-      await dispatch(updateIncidentStatusThunk({ id: incidentId, status: 'resolved' })).unwrap()
-      setResolved(true)
-    } catch (err) {
-      console.error('Failed to resolve incident', err)
-    }
+  function handleResolve() {
+    setResolved(true)
   }
 
   function handleAiSolutionConfirm() {

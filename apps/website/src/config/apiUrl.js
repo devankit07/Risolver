@@ -9,7 +9,7 @@ export function getApiBaseUrl() {
     return PRODUCTION_API_BASE
   }
 
-  const devFallback = 'http://localhost:5173/api'
+  const devFallback = 'http://localhost:3001/api'
   const raw = import.meta.env.VITE_API_URL
   if (raw === undefined || raw === null || String(raw).trim() === '') {
     return devFallback

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import {
   Plus, Link, Sparkles, MessageSquare, AlertCircle,
@@ -173,17 +173,7 @@ export default function Dashboard() {
               <p className="text-[13px] text-[var(--text-secondary,#64748b)]">No incident trend data yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={OPEN_FILL} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={OPEN_FILL} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={RESOLVED_FILL} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={RESOLVED_FILL} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <BarChart data={chart} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border,#e2e8f0)" />
                   <XAxis
                     dataKey="date"
@@ -206,9 +196,9 @@ export default function Dashboard() {
                     wrapperStyle={{ paddingTop: 12 }}
                     formatter={(value) => <span className="text-[12px] text-[var(--text-secondary,#64748b)]">{value}</span>}
                   />
-                  <Area type="monotone" dataKey="open" name="Open" stroke={OPEN_FILL} fillOpacity={1} fill="url(#colorOpen)" strokeWidth={3} activeDot={{ r: 6 }} />
-                  <Area type="monotone" dataKey="resolved" name="Resolved" stroke={RESOLVED_FILL} fillOpacity={1} fill="url(#colorResolved)" strokeWidth={3} activeDot={{ r: 6 }} />
-                </AreaChart>
+                  <Bar dataKey="open" name="Open" fill={OPEN_FILL} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="resolved" name="Resolved" fill={RESOLVED_FILL} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
