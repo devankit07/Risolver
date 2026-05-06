@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt'
 import inviteModel from '../models/invite.model.js'
 import userModel from '../models/user.model.js'
 import organizationModel from '../models/organization.model.js'
@@ -45,14 +44,13 @@ export const generateCredentials = async (req, res) => {
   if (!inviteId) return sendResponse(res, 500, false, 'Could not generate unique invite ID')
 
   const tempPassword = genTempPassword()
-  const hashedPassword = await bcrypt.hash(tempPassword, 12)
 
   const email = `${inviteId.toLowerCase()}@invite.resolver.local`
 
   await userModel.create({
     name: name.trim(),
     email,
-    password: hashedPassword,
+    password: tempPassword,
     role,
     specialization: specialization?.trim() || null,
     inviteId,
@@ -61,8 +59,8 @@ export const generateCredentials = async (req, res) => {
     status: 'offline',
   })
 
-  const manageUrl = process.env.MANAGE_URL || 'http://localhost:3001'
-  const shareLink = `${manageUrl}/join?id=${inviteId}`
+  const websiteUrl = process.env.VITE_WEBSITE_URL || 'http://localhost:3000'
+  const shareLink = `${websiteUrl}/join?id=${inviteId}`
 
   await inviteModel.create({
     inviteId,
@@ -188,12 +186,18 @@ export const validateInvite = async (req, res) => {
 // ── POST /api/invites/setup ───────────────────────────────────────────────────
 
 export const setupInviteAccount = async (req, res) => {
-  const { inviteId, name, password } = req.body
+  const { inviteId, name, email, password } = req.body
 
   if (!inviteId?.trim()) return sendResponse(res, 400, false, 'inviteId is required')
   if (!name?.trim())     return sendResponse(res, 400, false, 'name is required')
+  if (!email?.trim())    return sendResponse(res, 400, false, 'email is required')
   if (!password || password.length < 6) {
     return sendResponse(res, 400, false, 'password must be at least 6 characters')
+  }
+
+  const existingUser = await userModel.findOne({ email: email.trim() })
+  if (existingUser && existingUser.inviteId !== inviteId.trim().toUpperCase()) {
+    return sendResponse(res, 400, false, 'Email is already in use by another account')
   }
 
   const invite = await inviteModel
@@ -208,16 +212,15 @@ export const setupInviteAccount = async (req, res) => {
     return sendResponse(res, 400, false, 'This invite has expired')
   }
 
-  const email = `${inviteId.trim().toLowerCase()}@invite.resolver.local`
   const user = await userModel.findOne({
-    email,
+    inviteId: invite.inviteId,
     organizationId: invite.organizationId._id ?? invite.organizationId,
   })
   if (!user) return sendResponse(res, 404, false, 'User account not found for this invite')
 
-  const hashedPassword = await bcrypt.hash(password, 12)
   user.name = name.trim()
-  user.password = hashedPassword
+  user.email = email.trim()
+  user.password = password
   await user.save()
 
   invite.status = 'used'

@@ -12,7 +12,6 @@ import ReportDetail from './pages/ReportDetail.jsx'
 import ActiveIncidents from './pages/ActiveIncidents.jsx'
 import WorkspaceHub from './pages/WorkspaceHub.jsx'
 import Login from './pages/Login.jsx'
-import Join from './pages/Join.jsx'
 import socket, { connectSocket, disconnectSocket } from './services/socket.js'
 import api from './services/api.js'
 import { updateMemberStatus, addNotification } from './store/teamSlice.js'
@@ -113,7 +112,6 @@ export default function App() {
       </Route>
 
       <Route path="/login" element={<Login />} />
-      <Route path="/join"  element={<Join />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
     </>

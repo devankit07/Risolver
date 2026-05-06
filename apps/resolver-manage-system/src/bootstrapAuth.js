@@ -8,6 +8,17 @@ import { hydrateAuth } from './store/authSlice.js'
 export function hydrateAuthFromStorage(store) {
   if (typeof localStorage === 'undefined') return
   try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenParam = urlParams.get('token');
+    const userParamStr = urlParams.get('user');
+
+    if (tokenParam && userParamStr) {
+      const user = JSON.parse(decodeURIComponent(urlParams.get('user')));
+      localStorage.setItem('resolver_token', tokenParam);
+      localStorage.setItem('resolver_user', JSON.stringify(user));
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const manageRaw   = localStorage.getItem('manage_user')
     const manageToken = localStorage.getItem('manage_token')
     if (manageRaw && manageToken) {
@@ -18,11 +29,7 @@ export function hydrateAuthFromStorage(store) {
     const resolverRaw   = localStorage.getItem('resolver_user')
     const resolverToken = localStorage.getItem('resolver_token')
     if (resolverRaw && resolverToken) {
-      const user = JSON.parse(resolverRaw)
-      // Only let website sessions in for admin / manager roles
-      if (user?.role === 'admin' || user?.role === 'manager') {
-        store.dispatch(hydrateAuth({ user, token: resolverToken }))
-      }
+      store.dispatch(hydrateAuth({ user: JSON.parse(resolverRaw), token: resolverToken }))
     }
   } catch {
     /* ignore corrupt storage */

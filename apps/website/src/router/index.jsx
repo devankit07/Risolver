@@ -9,10 +9,12 @@ import Pricing from '../pages/Pricing.jsx'
 import { LoginPage } from '../pages/Auth/Login.jsx'
 import { RegisterPage } from '../pages/Auth/Register.jsx'
 import { OrganizationPage } from '../pages/Auth/Organization.jsx'
+import Join from '../pages/Auth/Join.jsx'
 
 export default function AppRouter() {
   return (
     <Routes>
+      <Route path="/join" element={<Join />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/organization" element={<OrganizationPage />} />

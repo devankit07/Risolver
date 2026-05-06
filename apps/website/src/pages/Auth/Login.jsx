@@ -37,7 +37,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login({ email, password })
-      window.location.href = `${import.meta.env.VITE_MANAGE_URL || 'http://localhost:3001'}/dashboard`
+      navigate('/')
     } catch (err) {
       setError(err.message)
     } finally {

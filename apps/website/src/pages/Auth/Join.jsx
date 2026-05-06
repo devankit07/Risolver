@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import {
   Shield, User, Lock, ArrowRight, Loader2, CheckCircle2,
   Activity, Cpu, Database, Building2, Tag, AlertTriangle,
 } from 'lucide-react'
-import { hydrateAuth } from '../store/authSlice.js'
-import api from '../services/api.js'
-import { getApiBaseUrl } from '../config/apiUrl.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { getApiBaseUrl } from '../../config/apiUrl.js'
 
 const inputCls =
   'w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-5 py-4 pl-12 text-sm text-slate-900 outline-none transition-all focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-50 placeholder:text-slate-400'
@@ -101,8 +99,8 @@ function AuthLeftPanel() {
 // ─── Main Join page ───────────────────────────────────────────────────────────
 
 export default function Join() {
-  const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { persist } = useAuth()
   const [searchParams] = useSearchParams()
 
   const urlId = searchParams.get('id') ?? ''
@@ -176,14 +174,19 @@ export default function Join() {
       const user  = data.data.user
       const token = data.data.token
 
-      localStorage.setItem('manage_user', JSON.stringify(user))
-      localStorage.setItem('manage_token', token)
-      dispatch(hydrateAuth({ user, token }))
+      persist(user, token)
+      
       const uid = user?._id ?? user?.id
-      if (uid) void api.patch(`/users/${uid}/status`, { status: 'online' }).catch(() => {})
+      if (uid) {
+        fetch(`${getApiBaseUrl()}/users/${uid}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'online' })
+        }).catch(() => {})
+      }
 
       setDone(true)
-      setTimeout(() => navigate('/dashboard', { replace: true }), 1400)
+      setTimeout(() => navigate('/', { replace: true }), 1400)
     } catch {
       setError('Could not connect. Is the server running?')
     } finally {
