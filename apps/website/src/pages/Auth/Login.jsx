@@ -36,8 +36,15 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login({ email, password })
-      navigate('/')
+      const user = await login({ email, password })
+      const manageUrl = import.meta.env.VITE_MANAGE_URL
+      
+      if ((user?.role === 'admin' || user?.role === 'manager') && manageUrl) {
+        // Force redirect to the management dashboard
+        window.location.href = manageUrl
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       setError(err.message)
     } finally {

@@ -168,7 +168,12 @@ export function Navbar({ user, onLogout }) {
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
-                  ['text-sm font-semibold transition', isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'].join(' ')
+                  [
+                    'inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold transition',
+                    isActive
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
+                  ].join(' ')
                 }
               >
                 Contact
@@ -245,7 +250,14 @@ export function Navbar({ user, onLogout }) {
                     <NavLink
                       to="/contact"
                       onClick={() => setOpen(false)}
-                      className="block py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900"
+                      className={({ isActive }) =>
+                        [
+                          'mt-2 inline-flex items-center justify-center rounded-xl py-3 text-sm font-semibold transition',
+                          isActive
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100',
+                        ].join(' ')
+                      }
                     >
                       Contact
                     </NavLink>

@@ -42,7 +42,12 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await register({ name, email, password, organizationName: orgName })
-      navigate('/')
+      const manageUrl = import.meta.env.VITE_MANAGE_URL
+      if (manageUrl) {
+        window.location.href = manageUrl
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       setError(err.message)
     } finally {
