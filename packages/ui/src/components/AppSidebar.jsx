@@ -6,6 +6,7 @@ import { Avatar } from './Avatar.jsx'
 const SIDEBAR_BG = 'var(--sidebar-bg, #3730a3)'
 const NAV = (workspaceTo) => [
   { to: '/dashboard', label: 'Dashboard', icon: GridIcon, prefix: null },
+  { to: '/projects', label: 'Projects', icon: BriefcaseIcon, prefix: '/projects' },
   { to: '/messages', label: 'Messages', icon: ChatIcon, prefix: '/messages' },
   { to: '/team', label: 'Team', icon: PeopleIcon, prefix: '/team' },
   { to: '/incidents/active', label: 'Incidents', icon: AlertIncidentsIcon, prefix: '/incidents' },
@@ -229,3 +230,14 @@ function ToolsIcon({ size = 16 }) {
     </svg>
   )
 }
+
+function BriefcaseIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className="shrink-0">
+      <rect x="2" y="4" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.35" />
+      <path d="M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1" stroke="currentColor" strokeWidth="1.35" />
+      <path d="M2 8h12" stroke="currentColor" strokeWidth="1.35" />
+    </svg>
+  )
+}
+

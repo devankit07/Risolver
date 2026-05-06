@@ -3,9 +3,9 @@ import api from '../services/api.js'
 
 export const generateInvite = createAsyncThunk(
   'invite/generate',
-  async ({ name, role, specialization, organizationId }, { rejectWithValue }) => {
+  async ({ name, email, password, role, specialization, organizationId }, { rejectWithValue }) => {
     try {
-      const res = await api.post('/invites/generate', { name, role, specialization, organizationId })
+      const res = await api.post('/invites/generate', { name, email, password, role, specialization, organizationId })
       return res.data.data
     } catch (err) {
       return rejectWithValue(err.response?.data?.message ?? 'Failed to generate invite')

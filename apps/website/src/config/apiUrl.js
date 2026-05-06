@@ -9,9 +9,9 @@ export function getApiBaseUrl() {
     return PRODUCTION_API_BASE
   }
 
-  const devFallback = 'http://localhost:3001/api'
+  const devFallback = 'http://localhost:5173/api'
   const raw = import.meta.env.VITE_API_URL
-  if (raw === undefined || raw === null || String(raw).trim() === '') {
+  if (!raw || String(raw).includes('railway.app')) {
     return devFallback
   }
   let s = String(raw).trim()

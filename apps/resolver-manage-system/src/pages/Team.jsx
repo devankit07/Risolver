@@ -6,13 +6,12 @@ import { LayoutGrid, List } from 'lucide-react'
 import { fetchTeamMembers } from '../store/teamSlice.js'
 import InviteModal from '../components/InviteModal.jsx'
 
-const ROLE_OPTIONS = ['All', 'admin', 'manager', 'creator', 'responder']
+const ROLE_OPTIONS = ['All', 'manager', 'responder']
 
 const TAG_COLOR = {
   admin:     'bg-red-50    text-red-700',
   manager:   'bg-purple-50 text-purple-700',
-  creator:   'bg-indigo-50 text-indigo-700',
-  responder: 'bg-green-50  text-green-700',
+  responder: 'bg-emerald-50 text-emerald-700',
 }
 
 const COL_HEADS = ['Name', 'Role', 'Status', 'Department', 'Last active', 'Joined on', 'Actions']
@@ -121,7 +120,9 @@ export default function Team() {
             className="h-10 min-w-[140px] cursor-pointer appearance-none rounded-[8px] border border-[var(--accent-border,#c7d2fe)] bg-[var(--accent-dim,#eef2ff)] px-3 pr-8 text-[13px] font-medium text-[var(--accent,#4f46e5)] outline-none focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/25"
           >
             {ROLE_OPTIONS.map((r) => (
-              <option key={r} value={r}>{r === 'All' ? 'All roles' : r.charAt(0).toUpperCase() + r.slice(1)}</option>
+              <option key={r} value={r}>
+                {r === 'All' ? 'All roles' : r === 'responder' ? 'Team Member' : r.charAt(0).toUpperCase() + r.slice(1)}
+              </option>
             ))}
           </select>
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--accent,#4f46e5)]">▾</span>
@@ -171,7 +172,7 @@ export default function Team() {
                       </span>
                     )}
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${TAG_COLOR[member.role] ?? 'bg-[var(--accent-dim,#eef2ff)] text-[var(--accent,#4f46e5)]'}`}>
-                      {member.role}
+                      {member.role === 'responder' ? 'Team Member' : member.role}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
@@ -257,7 +258,7 @@ export default function Team() {
                           </span>
                         )}
                         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${TAG_COLOR[member.role] ?? 'bg-[var(--accent-dim,#eef2ff)] text-[var(--accent,#4f46e5)]'}`}>
-                          {member.role}
+                          {member.role === 'responder' ? 'Team Member' : member.role}
                         </span>
                       </div>
                     </td>

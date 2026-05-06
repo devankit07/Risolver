@@ -22,10 +22,12 @@ export default function CreateIncidentModal({ onClose }) {
     severity: '',
     service: '',
     assignedToUserId: '',
+    projectId: '',
   })
   const [assigneeSearch, setAssigneeSearch] = useState('')
   const [assigneeName, setAssigneeName] = useState('')
   const [teamRoster, setTeamRoster] = useState([])
+  const [projects, setProjects] = useState([])
   const [rosterLoading, setRosterLoading] = useState(true)
   const [assignPickerOpen, setAssignPickerOpen] = useState(false)
   const [toast, setToast] = useState(null)
@@ -36,13 +38,19 @@ export default function CreateIncidentModal({ onClose }) {
 
   useEffect(() => {
     setRosterLoading(true)
-    api
-      .get('/users?limit=150&page=1')
-      .then(({ data }) => {
-        const users = data.data?.users ?? data.users ?? []
+    Promise.all([
+      api.get('/users?limit=150&page=1'),
+      api.get('/projects')
+    ])
+      .then(([{ data: userData }, { data: projectData }]) => {
+        const users = userData.data?.users ?? userData.users ?? []
         setTeamRoster(Array.isArray(users) ? users : [])
+        setProjects(projectData.data || [])
       })
-      .catch(() => setTeamRoster([]))
+      .catch(() => {
+        setTeamRoster([])
+        setProjects([])
+      })
       .finally(() => setRosterLoading(false))
   }, [])
 
@@ -111,6 +119,7 @@ export default function CreateIncidentModal({ onClose }) {
     if (!form.title.trim()) return setFormError('Title is required.')
     if (!form.severity) return setFormError('Severity is required.')
     if (!form.service.trim()) return setFormError('Service is required.')
+    if (!form.projectId) return setFormError('Project selection is required.')
     if (!form.assignedToUserId) return setFormError('Please assign this incident to a team member.')
     if (!desc && reportImages.length === 0) {
       return setFormError('Describe the problem in text and/or add at least one screenshot.')
@@ -218,6 +227,25 @@ export default function CreateIncidentModal({ onClose }) {
               )}
             </div>
             <p className="mt-1 text-[11px] text-[#94a3b8]">Up to {MAX_IMAGES} images · max ~{Math.round(MAX_IMAGE_BYTES / 1024)} KB each</p>
+          </div>
+
+          {/* Project Selection */}
+          <div>
+            <label className="mb-1 block text-[12px] font-medium text-[#475569]">
+              Project <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.projectId}
+              onChange={(e) => handleField('projectId', e.target.value)}
+              className="w-full rounded-[8px] border border-[#e2e8f0] px-3 py-2 text-[13px] text-[#1e293b] outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="">Select Project…</option>
+              {projects.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Severity + Service */}

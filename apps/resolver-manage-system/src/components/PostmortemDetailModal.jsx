@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useSelector } from 'react-redux'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Sparkles } from 'lucide-react'
 import { format } from 'date-fns'
 
 function severityStyle(sev) {
@@ -189,7 +189,15 @@ export default function PostmortemDetailModal({ id, canApprove, onClose, onAppro
             </section>
           )}
 
-          {/* Root cause */}
+          {/* Summary */}
+          {pm.summary && (
+            <section>
+              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-2">Summary</h3>
+              <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.summary}</p>
+            </section>
+          )}
+
+          {/* Root Cause */}
           {pm.rootCause && (
             <section>
               <div className="mb-2 flex items-center gap-2">
@@ -208,45 +216,48 @@ export default function PostmortemDetailModal({ id, canApprove, onClose, onAppro
             </section>
           )}
 
-          {/* Solution applied */}
-          {pm.solutionApplied && (
-            <section>
-              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-2">Solution applied</h3>
-              <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.solutionApplied}</p>
-            </section>
-          )}
+          {/* Analysis Blocks */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pm.whatWorked && (
+              <section>
+                <h3 className="text-[14px] font-semibold text-green-700 mb-2 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                  What worked
+                </h3>
+                <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.whatWorked}</p>
+              </section>
+            )}
+            {pm.whatDidntWork && (
+              <section>
+                <h3 className="text-[14px] font-semibold text-red-700 mb-2 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  What didn't work
+                </h3>
+                <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.whatDidntWork}</p>
+              </section>
+            )}
+          </div>
 
-          {/* Prevention steps */}
-          {pm.preventionSteps?.length > 0 && (
-            <section>
-              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-3">Prevention steps</h3>
-              <ol className="flex flex-col gap-2">
-                {pm.preventionSteps.map((step, i) => (
-                  <li key={i} className="flex items-start gap-3 text-[14px] text-[#475569]">
-                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eef2ff] text-[11px] font-semibold text-[#4f46e5]">
-                      {i + 1}
-                    </span>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
-
-          {/* Legacy fields */}
-          {pm.summary && !pm.whatHappened && (
-            <section>
-              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-2">Summary</h3>
-              <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.summary}</p>
-            </section>
-          )}
+          {/* Recommendations */}
           {pm.recommendations && (
+            <section className="rounded-[8px] bg-indigo-50/50 border border-indigo-100 p-4">
+              <h3 className="text-[14px] font-semibold text-indigo-900 mb-2 flex items-center gap-2">
+                <Sparkles size={14} />
+                Recommendations
+              </h3>
+              <p className="text-[14px] text-indigo-950/80 leading-[1.7]">{pm.recommendations}</p>
+            </section>
+          )}
+
+          {/* Impact */}
+          {pm.impact && (
             <section>
-              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-2">Recommendations</h3>
-              <p className="text-[14px] text-[#475569] leading-[1.7]">{pm.recommendations}</p>
+              <h3 className="text-[14px] font-semibold text-[#1e293b] mb-2">Impact</h3>
+              <p className="text-[14px] text-[#475569] leading-[1.7] font-medium">{pm.impact}</p>
             </section>
           )}
         </div>
+
 
         {/* Sticky footer */}
         <div className="shrink-0 flex items-center justify-between border-t border-[#e2e8f0] bg-white px-6 py-4">

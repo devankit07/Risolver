@@ -75,6 +75,11 @@ const incidentSchema = new mongoose.Schema(
       },
       resolvedAt: { type: Date, default: null },
     },
+    projectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      default: null,
+    },
     /** Base64 data URLs (jpeg/png/webp/gif) uploaded with the report — text description can be omitted if images explain the issue */
     reportImages: { type: [String], default: [] },
   },

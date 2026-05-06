@@ -124,10 +124,22 @@ const postmortemsSlice = createSlice({
       .addCase(fetchPendingApprovals.fulfilled, (s, a) => {
         const p = a.payload ?? {}
         s.pendingApprovals = Array.isArray(p.postmortems) ? p.postmortems : []
+        // Sync stats if possible
+        s.stats.pendingApproval = s.pendingApprovals.length
       })
 
+      .addCase(fetchPostmortemDetail.pending, (s) => {
+        s.loading = true
+        s.activeDetail = null
+        s.error = null
+      })
       .addCase(fetchPostmortemDetail.fulfilled, (s, a) => {
+        s.loading = false
         s.activeDetail = a.payload
+      })
+      .addCase(fetchPostmortemDetail.rejected, (s, a) => {
+        s.loading = false
+        s.error = a.payload
       })
 
       .addCase(approvePostmortem.pending, (s) => { s.approving = true })
@@ -135,16 +147,30 @@ const postmortemsSlice = createSlice({
         s.approving = false
         const updated = a.payload
         if (!updated?._id) return
+        
+        // Update in lists
         const idx = s.postmortems.findIndex((p) => String(p._id) === String(updated._id))
         if (idx !== -1) s.postmortems[idx] = updated
+        
         if (s.activeDetail && String(s.activeDetail._id) === String(updated._id)) {
           s.activeDetail = updated
         }
+        
         s.pendingApprovals = s.pendingApprovals.filter(
           (p) => String(p._id) !== String(updated._id),
         )
+        
+        // Update stats counters
+        s.stats.pendingApproval = Math.max(0, s.stats.pendingApproval - 1)
+        if (updated.status === 'published') {
+           s.stats.published += 1
+        }
       })
-      .addCase(approvePostmortem.rejected, (s) => { s.approving = false })
+      .addCase(approvePostmortem.rejected, (s, a) => { 
+        s.approving = false 
+        s.error = a.payload
+      })
+
   },
 })
 

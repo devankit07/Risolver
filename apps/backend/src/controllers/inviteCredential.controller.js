@@ -28,13 +28,45 @@ function genTempPassword() {
 // ── POST /api/invites/generate ───────────────────────────────────────────────
 
 export const generateCredentials = async (req, res) => {
-  const { name, role, specialization, organizationId } = req.body
+  const { name, role, specialization, organizationId, email: providedEmail, password: providedPassword } = req.body
   const orgId = organizationId || String(req.user.organizationId)
 
   if (!name?.trim()) return sendResponse(res, 400, false, 'Name is required')
   if (!role) return sendResponse(res, 400, false, 'Access tag (role) is required')
   if (role === 'admin') return sendResponse(res, 400, false, 'Cannot invite another admin')
 
+  const org = await organizationModel.findById(orgId).select('name')
+  if (!org) return sendResponse(res, 404, false, 'Organization not found')
+
+  // If email and password are provided, we create the user directly
+  if (providedEmail && providedPassword) {
+    if (providedPassword.length < 6) return sendResponse(res, 400, false, 'Password must be at least 6 characters')
+    
+    const existing = await userModel.findOne({ email: providedEmail.trim().toLowerCase() })
+    if (existing) return sendResponse(res, 400, false, 'Email is already in use')
+
+    const newUser = await userModel.create({
+      name: name.trim(),
+      email: providedEmail.trim().toLowerCase(),
+      password: providedPassword, // will be hashed in pre-save
+      role,
+      specialization: specialization?.trim() || null,
+      organizationId: orgId,
+      status: 'offline',
+    })
+
+    return sendResponse(res, 201, true, 'Member created successfully', {
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      specialization: newUser.specialization,
+      organizationName: org.name,
+      password: providedPassword, // Return the plain password once for the popup
+      liveUrl: 'https://risolver-resolver-manage-system.vercel.app/login',
+    })
+  }
+
+  // Fallback to the legacy invite system if no email/pass provided
   let inviteId = null
   for (let attempt = 0; attempt < 5; attempt++) {
     const candidate = genInviteId()
@@ -44,7 +76,6 @@ export const generateCredentials = async (req, res) => {
   if (!inviteId) return sendResponse(res, 500, false, 'Could not generate unique invite ID')
 
   const tempPassword = genTempPassword()
-
   const email = `${inviteId.toLowerCase()}@invite.resolver.local`
 
   await userModel.create({
@@ -64,7 +95,7 @@ export const generateCredentials = async (req, res) => {
 
   await inviteModel.create({
     inviteId,
-    token: inviteId,          // unique value to avoid duplicate-key on legacy index
+    token: inviteId,
     role,
     specialization: specialization?.trim() || null,
     name: name.trim(),
@@ -81,7 +112,9 @@ export const generateCredentials = async (req, res) => {
     role,
     specialization: specialization?.trim() || null,
     name: name.trim(),
+    organizationName: org.name,
     shareLink,
+    liveUrl: 'https://risolver-resolver-manage-system.vercel.app/login',
     message: 'Share these credentials once. Password cannot be recovered.',
   })
 }

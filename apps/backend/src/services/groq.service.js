@@ -96,12 +96,52 @@ Description: ${description}`,
   return JSON.parse(content);
 };
 
-export const generatePostmortem = async (incidentId) => {
-    const incidentUpdates = await incidentUpdateModel.find({ incidentId }).sort({ createdAt: 1 });
+export const generateIncidentSummary = async (incident) => {
+  const groq = getGroq();
+  const response = await groq.chat.completions.create({
+    model: "llama-3.1-8b-instant",
+    messages: [
+      {
+        role: "system",
+        content: "You are an incident management assistant. Summarize the incident in a few clear bullet points. Return pure JSON with a 'summary' field (array of strings)."
+      },
+      {
+        role: "user",
+        content: `Summarize this incident:
+Title: ${incident.title}
+Description: ${incident.description}
+Severity: ${incident.severity}
+Service: ${incident.service}`
+      }
+    ],
+    temperature: 0,
+  });
+  return JSON.parse(response.choices[0].message.content);
+};
 
-    const updatesText = incidentUpdates.map(update => {
-        return `Time: ${update.createdAt}\nStatus: ${update.status}\nMessage: ${update.message}\nPosted by: ${update.postedBy}\n\n`;
-    }).join("\n");
+export const generateIncidentFixSuggestion = async (incident) => {
+  const groq = getGroq();
+  const response = await groq.chat.completions.create({
+    model: "llama-3.1-8b-instant",
+    messages: [
+      {
+        role: "system",
+        content: "You are a senior engineer. Suggest an approach to fix this incident. Return pure JSON with 'approach' and 'steps' (array) fields."
+      },
+      {
+        role: "user",
+        content: `Incident: ${incident.title}
+Description: ${incident.description}
+Service: ${incident.service}`
+      }
+    ],
+    temperature: 0,
+  });
+  return JSON.parse(response.choices[0].message.content);
+};
+
+export const generatePostmortem = async (incident, timeline, solver) => {
+    const timelineText = timeline.map(t => `[${t.createdAt}] ${t.content}`).join("\n");
 
     const groq = getGroq();
     const response = await groq.chat.completions.create({
@@ -109,30 +149,30 @@ export const generatePostmortem = async (incidentId) => {
         messages: [
             {
                 role: "system",
-                content: "You are an expert incident management assistant. Generate a postmortem analysis based on the incident updates. Return pure JSON with a single field 'postmortem' containing the analysis. No markdown, no backticks, no extra text."
+                content: "You are an expert incident management assistant. Generate a detailed postmortem analysis. Return pure JSON."
             },
             {
                 role: "user",
-                content: `Analyze the following incident updates and generate a postmortem analysis covering:
-- Summary of the incident timeline(field should be only 'summary')
-- Root cause analysis(field should be only 'rootCause')
-- What the solution worked in solving the issue by reading all the timeline's messages(field should be only 'whatWorked')
-- What are the recommendations to prevent it next time(field should be only 'recommendations')
-Incident Updates:\n\n${updatesText}
-Rules:
-- NO nested object, each field should be a string.
-- Always in English, even if the input is in another language
-- there should be direct mentioned field no nested. no poostmortem field, direct mentioned field.
-`
+                content: `Generate a postmortem for:
+Title: ${incident.title}
+Service: ${incident.service}
+Resolved by: ${solver.name}
+Timeline:
+${timelineText}
 
+JSON structure:
+{
+  "summary": "...",
+  "rootCause": "...",
+  "whatWorked": "...",
+  "whatDidntWork": "...",
+  "recommendations": "...",
+  "impact": "..."
+}`
             }
         ],
         temperature: 0,
     });
 
-    const content = response.choices[0].message.content;
-    const result = JSON.parse(content);
-    return result;
-    // Here you can save the postmortem analysis back to the database if needed, e.g.:
-    // await incidentModel.findByIdAndUpdate(incidentId, { postmortem: result.postmortem });
-}
+    return JSON.parse(response.choices[0].message.content);
+}

@@ -72,7 +72,7 @@ export const registerWithInvite = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await userModel.findOne({ email });
+  const user = await userModel.findOne({ email }).populate("organizationId");
   if (!user) {
     sendResponse(res, 401, false, "Invalid email or password");
     return;
@@ -84,33 +84,28 @@ export const login = async (req, res) => {
     return;
   }
 
-  /* look up org so we can return its name */
-  const org = user.organizationId
-    ? await organizationModel.findById(user.organizationId).lean()
-    : null;
-
-  generateToken(user, res, "Logged in successfully", org?.name ?? null);
+  generateToken(user, res, "Logged in successfully", user.organizationId?.name ?? null);
 };
 
 export const getMe = async (req, res) => {
-  const { user } = req;
-
-  const org = user.organizationId
-    ? await organizationModel.findById(user.organizationId).lean()
-    : null;
+  const user = await userModel.findById(req.user._id).populate("organizationId");
+  if (!user) {
+    return sendResponse(res, 404, false, "User not found");
+  }
 
   sendResponse(res, 200, true, "User fetched successfully", {
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
-      organizationId: user.organizationId,
-      organizationName: org?.name ?? null,
+      organizationId: user.organizationId?._id,
+      organizationName: user.organizationId?.name ?? null,
       role: user.role,
       jobTitle: user.jobTitle ?? null,
     },
   });
 };
+
 
 export const logout = async (req, res) => {
   await userModel.findByIdAndUpdate(req.user._id, { $inc: { tokenVersion: 1 } });

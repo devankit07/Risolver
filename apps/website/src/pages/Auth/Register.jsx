@@ -1,6 +1,6 @@
 import { Mail, Lock, User, ArrowRight, Building2, Users, Phone, Shield } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AuthSplitLayout } from '../../layouts/AuthSplitLayout.jsx'
 import {
   AuthBackLink,
@@ -213,7 +213,7 @@ export function RegisterPage() {
               </button>
               <button type="submit" disabled={loading}
                 className="flex flex-[2] items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
-                {loading ? 'Creating account…' : 'Create account'}
+                <LoadingMessage loading={loading} />
                 {!loading && <ArrowRight size={18} aria-hidden />}
               </button>
             </div>
@@ -223,4 +223,23 @@ export function RegisterPage() {
       )}
     </AuthSplitLayout>
   )
+}
+
+function LoadingMessage({ loading }) {
+  const [msgIdx, setMsgIdx] = useState(0)
+  const messages = ['Creating account...', 'Storing details...', 'Provisioning workspace...', 'Almost done...']
+
+  useEffect(() => {
+    if (!loading) {
+      setMsgIdx(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setMsgIdx((i) => (i + 1 < messages.length ? i + 1 : i))
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [loading, messages.length])
+
+  if (!loading) return <>Create account</>
+  return <>{messages[msgIdx]}</>
 }

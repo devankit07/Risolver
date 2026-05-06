@@ -10,6 +10,7 @@ import {
 } from '@resolver/ui'
 import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
 import { updateRealtimeIncident } from '../store/incidentsSlice.js'
+import api from '../services/api.js'
 import { getSocketOrigin } from '../config/apiUrl.js'
 
 const API = getSocketOrigin()
@@ -31,6 +32,13 @@ export default function Workspace() {
     createdAt: '—',
   }
 
+  const [manualApproach, setManualApproach] = useState('')
+  const [aiSummary, setAiSummary] = useState(null)
+  const [aiSuggestion, setAiSuggestion] = useState(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
   const [timeline, setTimeline] = useState([])
   const [updateText, setUpdateText] = useState('')
   const [updateType, setUpdateType] = useState('Update')
@@ -48,19 +56,19 @@ export default function Workspace() {
 
   useEffect(() => {
     if (!API) return
-    const socket = io(`${API}/incidents`, {
+    const socketClient = io(`${API}/incidents`, {
       transports: ['websocket'],
       auth: { token: localStorage.getItem('resolver_token') ?? localStorage.getItem('token') ?? '' },
     })
-    socket.emit('incident:subscribe', { incidentId })
-    socket.on('incident:update', (payload) => {
+    socketClient.emit('incident:subscribe', { incidentId })
+    socketClient.on('incident:update', (payload) => {
       dispatch(updateRealtimeIncident(payload))
       if (payload.timelineEntry) {
         setTimeline((prev) => [payload.timelineEntry, ...prev])
       }
     })
     return () => {
-      socket.disconnect()
+      socketClient.disconnect()
     }
   }, [incidentId, dispatch])
 
@@ -77,9 +85,51 @@ export default function Workspace() {
     setUpdateText('')
   }
 
-  function handleResolve() {
-    setResolved(true)
+  const fetchSummary = async () => {
+    try {
+      setLoadingSummary(true)
+      const { data } = await api.get(`/ai/${incidentId}/summarize`)
+      setAiSummary(data.summary)
+    } catch (err) {
+      console.error('Failed to fetch summary', err)
+    } finally {
+      setLoadingSummary(false)
+    }
   }
+
+  const fetchSuggestion = async () => {
+    try {
+      setLoadingSuggestion(true)
+      const { data } = await api.get(`/ai/${incidentId}/suggest-fix`)
+      setAiSuggestion(data)
+    } catch (err) {
+      console.error('Failed to fetch suggestion', err)
+    } finally {
+      setLoadingSuggestion(false)
+    }
+  }
+
+  async function handleResolve(isAi = false) {
+    try {
+      setSubmitting(true)
+      await api.post('/postmortems', {
+        incidentId,
+        approach: isAi ? aiSuggestion?.approach : manualApproach,
+        isAiGenerated: isAi
+      })
+      setResolved(true)
+    } catch (err) {
+      console.error('Failed to resolve incident', err)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (resolution === 'ai_suggestion' && !aiSuggestion) {
+      fetchSuggestion()
+    }
+  }, [resolution])
 
   function handleAiSolutionConfirm() {
     if (!githubUrl.trim()) return
@@ -96,7 +146,7 @@ export default function Workspace() {
         status={incident.status}
         assigneeName={incident.assignees?.[0]}
         onBack={() => navigate(-1)}
-        onMarkResolved={handleResolve}
+        onMarkResolved={() => handleResolve(false)}
         resolved={resolved}
         resolutionMethod={resolution === 'ai_solution' ? 'AI Solution' : resolution === 'ai_suggestion' ? 'AI Suggestion' : resolution === 'manual' ? 'Manual' : undefined}
       />
@@ -104,78 +154,104 @@ export default function Workspace() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_minmax(0,1fr)_280px]">
         {/* Column 1 */}
         <div className="flex flex-col gap-4">
-          <AiTriageCard
-            variant="light"
-            summary={triage.summary}
-            suggestions={triage.suggestions}
-            isLoading={triageLoading}
-          />
+          <div className="relative rounded-[12px] border border-[var(--border,#e2e8f0)] bg-white p-5 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[14px] font-semibold text-[#1e293b] flex items-center gap-2">
+                <Sparkles size={16} className="text-indigo-600" />
+                AI Workspace
+              </h3>
+              {!aiSummary && (
+                <button 
+                  onClick={fetchSummary}
+                  disabled={loadingSummary}
+                  className="text-[12px] font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                >
+                  {loadingSummary ? 'Summarizing...' : 'Generate Summary'}
+                </button>
+              )}
+            </div>
+            
+            {aiSummary ? (
+              <div className="space-y-3">
+                {aiSummary.map((point, idx) => (
+                  <div key={idx} className="flex gap-2 text-[13px] text-[#475569] leading-relaxed">
+                    <span className="text-indigo-500 font-bold">•</span>
+                    <span>{point}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[13px] text-[#64748b] italic">Click to generate an AI summary of this incident for better understanding.</p>
+            )}
+          </div>
 
           {!resolved && (
             <ResolutionMethodCard selected={resolution} onSelect={(m) => setResolution(m)} />
           )}
 
-          {resolution === 'ai_solution' && !resolved && (
-            <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white p-4">
-              <label className="text-[12px] font-medium text-[var(--text-secondary,#64748b)]">GitHub repository URL</label>
-              <input
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                placeholder="https://github.com/org/repo"
-                className="mt-2 w-full rounded-[8px] border border-[var(--border,#e2e8f0)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/25"
-              />
-              <button
-                type="button"
-                onClick={handleAiSolutionConfirm}
-                className="mt-3 w-full rounded-[6px] bg-[var(--accent,#4f46e5)] py-2 text-[12px] font-semibold text-white hover:brightness-110"
-              >
-                Analyze →
-              </button>
-              {repoAnalyzing && (
-                <p className="mt-3 flex items-center gap-2 text-[13px] text-[var(--text-secondary,#64748b)]">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent,#4f46e5)] border-t-transparent" />
-                  Analyzing repository…
-                </p>
-              )}
-            </div>
-          )}
-
-          {resolution && !resolved && (
-            <div className="rounded-[8px] border border-violet-200 bg-violet-50 p-4">
-              <p className="text-[13px] leading-relaxed text-violet-950">
-                {resolution === 'manual'
-                  ? 'Describe the remediation in the manual resolution panel below.'
-                  : 'AI-generated remediation steps would appear here after analysis completes.'}
-              </p>
-              {resolution !== 'manual' && (
-                <button
-                  type="button"
-                  onClick={handleResolve}
-                  className="mt-4 w-full rounded-[6px] bg-[var(--success,#10b981)] py-2.5 text-[13px] font-semibold text-white hover:brightness-110"
-                >
-                  Mark as done →
-                </button>
-              )}
+          {resolution === 'ai_suggestion' && !resolved && (
+            <div className="rounded-[12px] border border-indigo-100 bg-indigo-50/50 p-5">
+              <h4 className="text-[13px] font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+                <Sparkles size={14} />
+                AI Suggested Approach
+              </h4>
+              {loadingSuggestion ? (
+                <div className="flex items-center gap-2 text-[13px] text-indigo-600">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+                  Analyzing problem and logs...
+                </div>
+              ) : aiSuggestion ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[13px] font-medium text-indigo-800">Approach:</p>
+                    <p className="mt-1 text-[13px] text-indigo-950/80 leading-relaxed">{aiSuggestion.approach}</p>
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium text-indigo-800">Steps to fix:</p>
+                    <ul className="mt-2 space-y-2">
+                      {aiSuggestion.steps?.map((step, i) => (
+                        <li key={i} className="flex gap-2 text-[13px] text-indigo-950/70">
+                          <span className="font-mono text-[11px] bg-indigo-100 px-1.5 rounded h-5 flex items-center">{i+1}</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => handleResolve(true)}
+                    disabled={submitting}
+                    className="w-full rounded-[8px] bg-indigo-600 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-70"
+                  >
+                    {submitting ? 'Generating Report...' : 'Use AI Approach & Resolve'}
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
 
           {resolution === 'manual' && !resolved && (
-            <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white p-4">
+            <div className="rounded-[12px] border border-[var(--border,#e2e8f0)] bg-white p-5 shadow-sm">
+               <h4 className="text-[13px] font-semibold text-[#1e293b] mb-3">Manual Resolution</h4>
               <textarea
                 rows={4}
+                value={manualApproach}
+                onChange={(e) => setManualApproach(e.target.value)}
                 placeholder="Describe what you did to resolve this…"
-                className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/20"
+                className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
               <button
                 type="button"
-                onClick={handleResolve}
-                className="mt-3 w-full rounded-[6px] bg-slate-700 py-2.5 text-[13px] font-semibold text-white hover:bg-[var(--accent,#4f46e5)]"
+                onClick={() => handleResolve(false)}
+                disabled={submitting || !manualApproach.trim()}
+                className="mt-3 w-full rounded-[8px] bg-slate-800 py-2.5 text-[13px] font-semibold text-white hover:bg-indigo-600 transition-all disabled:opacity-50"
               >
-                Submit manually →
+                {submitting ? 'Submitting...' : 'Submit Resolution →'}
               </button>
             </div>
           )}
         </div>
+
+
 
         {/* Column 2 */}
         <div className="flex min-h-[520px] flex-col rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)]">

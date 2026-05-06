@@ -15,6 +15,7 @@ import messageRouter from "./routes/message.routes.js";
 import broadcastRouter from "./routes/broadcast.routes.js";
 import incidentsRouter from "./routes/incidents.routes.js";
 import postmortemsRouter from "./routes/postmortems.routes.js";
+import projectRouter from "./routes/project.routes.js";
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use("/api/messages", messageRouter);
 app.use("/api/broadcasts", broadcastRouter);
 app.use("/api/incidents", incidentsRouter);
 app.use("/api/postmortems", postmortemsRouter);
+app.use("/api/projects", projectRouter);
 
 /* ── API 404 ── */
 app.use("/api", (_req, res) => {

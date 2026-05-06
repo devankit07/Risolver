@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
 import { LayoutDashboard, MessageSquare, Users, FileText, Briefcase } from 'lucide-react'
 import { clearAuth } from '../store/authSlice.js'
+import FloatingNotifications from '../components/FloatingNotifications.jsx'
 import api from '../services/api.js'
 
 const PAGE_META = {
@@ -36,6 +37,11 @@ const PAGE_META = {
     title: 'Work',
     subtitle: 'Incident workspace and timeline.',
     breadcrumb: ['Home', 'Workspace'],
+  },
+  '/projects': {
+    title: 'Projects',
+    subtitle: "Manage and track your organization's projects.",
+    breadcrumb: ['Home', 'Projects'],
   },
 }
 
@@ -106,6 +112,13 @@ export default function AppLayout() {
   }
 
   if (!user && !hasToken) {
+    if (pathname === '/') {
+      const websiteUrl = import.meta.env.VITE_WEBSITE_URL
+      if (websiteUrl) {
+        window.location.href = websiteUrl
+        return null
+      }
+    }
     return <Navigate to="/login" replace />
   }
 
@@ -116,6 +129,7 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg-base,#f8fafc)]">
+      <FloatingNotifications />
       <AppSidebar user={user} workspaceTo={workspaceTo} onLogout={handleLogout} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-14 md:pb-0">
@@ -158,6 +172,15 @@ export default function AppLayout() {
         >
           <MessageSquare className="h-5 w-5" />
           Chat
+        </NavLink>
+        <NavLink
+          to="/projects"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${isActive ? 'text-[var(--accent,#4f46e5)]' : 'text-slate-500'}`
+          }
+        >
+          <Briefcase className="h-5 w-5" />
+          Projects
         </NavLink>
         <NavLink
           to="/team"

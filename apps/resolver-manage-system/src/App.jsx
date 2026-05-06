@@ -12,6 +12,7 @@ import ReportDetail from './pages/ReportDetail.jsx'
 import ActiveIncidents from './pages/ActiveIncidents.jsx'
 import WorkspaceHub from './pages/WorkspaceHub.jsx'
 import Login from './pages/Login.jsx'
+import Projects from './pages/Projects.jsx'
 import socket, { connectSocket, disconnectSocket } from './services/socket.js'
 import api from './services/api.js'
 import { updateMemberStatus, addNotification } from './store/teamSlice.js'
@@ -92,14 +93,29 @@ function SocketConnector() {
   return null
 }
 
+function RootRedirect() {
+  const user = useSelector((s) => s.auth.user)
+  const websiteUrl = import.meta.env.VITE_WEBSITE_URL
+
+  useEffect(() => {
+    if (!user && websiteUrl) {
+      window.location.href = websiteUrl
+    }
+  }, [user, websiteUrl])
+
+  if (!user && websiteUrl) return null
+  return <Navigate to="/dashboard" replace />
+}
+
 export default function App() {
   return (
     <>
       <SocketConnector />
       <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<RootRedirect />} />
         <Route path="/dashboard"             element={<Dashboard />} />
+        <Route path="/projects"              element={<Projects />} />
         <Route path="/incidents/active"      element={<ActiveIncidents />} />
         <Route path="/incidents"             element={<Navigate to="/incidents/active" replace />} />
         <Route path="/workspace"             element={<WorkspaceHub />} />

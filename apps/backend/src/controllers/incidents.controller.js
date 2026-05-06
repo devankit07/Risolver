@@ -187,21 +187,28 @@ function sanitizeReportImages(raw) {
   return out
 }
 
+import { uploadToCloudinary } from '../utils/cloudinary.js'
+
 export const createNewIncident = async (req, res) => {
   try {
     const orgId = req.user.organizationId
-    const { title, description, severity, service, assignedToUserId } = req.body
-    const reportImages = sanitizeReportImages(req.body.reportImages)
+    const { title, description, severity, service, assignedToUserId, projectId } = req.body
+    const rawReportImages = sanitizeReportImages(req.body.reportImages)
 
     if (!title || !severity || !service || !assignedToUserId) {
       return sendResponse(res, 400, false, 'title, severity, service, and assignedToUserId are required')
     }
 
     const hasText = String(description ?? '').trim().length > 0
-    const hasImages = reportImages.length > 0
+    const hasImages = rawReportImages.length > 0
     if (!hasText && !hasImages) {
       return sendResponse(res, 400, false, 'Add a written description or at least one image that shows the problem')
     }
+
+    // Upload images to Cloudinary
+    const reportImages = await Promise.all(
+      rawReportImages.map((img) => uploadToCloudinary(img))
+    ).then((results) => results.filter(Boolean))
 
     const assignee = await userModel.findOne({ _id: assignedToUserId, organizationId: orgId })
     if (!assignee) return sendResponse(res, 404, false, 'Assignee not found in this org')
@@ -212,7 +219,7 @@ export const createNewIncident = async (req, res) => {
     const incident = await incidentModel.create({
       incidentId,
       title,
-      description: description || (hasImages ? '(See attached images)' : ''),
+      description: description || (reportImages.length > 0 ? '(See attached images)' : ''),
       severity,
       service,
       affectedService: service,
@@ -222,10 +229,11 @@ export const createNewIncident = async (req, res) => {
       assignedAt: new Date(),
       status: 'open',
       reportImages,
+      projectId: projectId || null,
       timeline: [
         {
           type: 'update',
-          content: hasImages ? 'Incident reported (includes images)' : 'Incident created',
+          content: reportImages.length > 0 ? 'Incident reported (includes images)' : 'Incident created',
           isAI: false,
           author: req.user._id,
           createdAt: new Date(),

@@ -2,6 +2,8 @@ import postMortemModel from '../models/postMortem.model.js'
 import incidentModel from '../models/incident.model.js'
 import notificationModel from '../models/notification.model.js'
 import { sendResponse } from '../utils/response.js'
+import { generatePostmortem } from '../services/groq.service.js'
+import userModel from '../models/user.model.js'
 
 const MEMBER_ROLES = ['creator', 'responder', 'engineer', 'devops', 'tester']
 const ADMIN_ROLES = ['admin', 'manager']
@@ -158,8 +160,9 @@ export const getPostmortemById = async (req, res) => {
         _id: req.params.id,
         $or: [{ organization: orgId }, { organizationId: orgId }],
       })
-      .populate('incident', 'incidentId title service affectedService severity createdAt resolvedAt')
-      .populate('incidentId', 'incidentId title service affectedService severity createdAt resolvedAt')
+      .populate('incident', 'incidentId title service affectedService severity createdAt resolvedAt timeline')
+      .populate('incidentId', 'incidentId title service affectedService severity createdAt resolvedAt timeline')
+
       .populate('assignedTo', 'name')
       .populate('resolvedBy', 'name')
       .populate('approvedBy', 'name')
@@ -188,7 +191,78 @@ export const getPublicPostmortemById = async (req, res) => {
   }
 }
 
-// PATCH /api/postmortems/:id/approve
+
+export const createPostmortem = async (req, res) => {
+  try {
+    const orgId = req.user.organizationId
+    const { incidentId, approach, isAiGenerated } = req.body
+
+    const incident = await incidentModel.findOne({ _id: incidentId, organizationId: orgId }).populate('timeline.author', 'name')
+    if (!incident) return sendResponse(res, 404, false, 'Incident not found')
+
+    let postmortemData = {}
+
+    if (isAiGenerated) {
+      // Generate using GROQ
+      postmortemData = await generatePostmortem(incident, incident.timeline, req.user)
+    } else {
+      // Manual submission
+      postmortemData = {
+        summary: incident.description,
+        rootCause: 'Under investigation',
+        whatWorked: approach || 'No approach provided',
+        whatDidntWork: 'N/A',
+        recommendations: 'N/A',
+        impact: `Service: ${incident.service}`,
+      }
+    }
+
+    const postmortem = await postMortemModel.create({
+      ...postmortemData,
+      incident: incidentId,
+      incidentId: incidentId,
+      organization: orgId,
+      organizationId: orgId,
+      title: `Postmortem: ${incident.title}`,
+      status: 'pending_approval',
+      resolvedBy: req.user._id,
+      generatedBy: isAiGenerated ? 'ai' : 'manual',
+    })
+
+    // Notify Admins/Managers
+    const managers = await userModel.find({ organizationId: orgId, role: { $in: ['admin', 'manager'] } })
+    const notificationPromises = managers.map(m => notificationModel.create({
+      userId: m._id,
+      organizationId: orgId,
+      type: 'report_pending',
+      title: 'New report pending approval',
+      body: `${req.user.name} submitted a report for: ${incident.title}`,
+      incidentId: incidentId,
+    }))
+    const notifications = await Promise.all(notificationPromises)
+
+    const io = req.app.get('io')
+    if (io) {
+      notifications.forEach(n => {
+        io.to(`user:${String(n.userId)}`).emit('notification:new', n)
+      })
+    }
+
+    // Mark incident as resolved if not already
+    if (incident.status !== 'resolved') {
+      incident.status = 'resolved'
+      incident.resolvedAt = new Date()
+      incident.resolvedBy = req.user._id
+      await incident.save()
+    }
+
+    sendResponse(res, 201, true, 'Postmortem created and pending approval', { postmortem })
+  } catch (err) {
+    sendResponse(res, 500, false, err.message)
+  }
+}
+
+
 export const approvePostmortem = async (req, res) => {
   try {
     const orgId = req.user.organizationId
@@ -265,11 +339,25 @@ export const approvePostmortem = async (req, res) => {
 function normalizePostmortem(pm) {
   const obj = pm.toObject ? pm.toObject() : pm
   const incidentRef = obj.incident || obj.incidentId || null
+  
+  // Combine timelines if needed or fallback
+  let timeline = obj.timeline || []
+  if (timeline.length === 0 && incidentRef?.timeline) {
+    timeline = incidentRef.timeline.map(t => ({
+      time: t.time || new Date(t.timestamp || t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      event: t.event || t.message || t.action || 'Event recorded',
+      author: t.author?.name || t.author || 'System'
+    }))
+  }
+
   return {
     ...obj,
     incidentRef,
+    timeline,
     generatedBy: (obj.generatedBy || 'ai').toLowerCase(),
     service: obj.service || incidentRef?.service || incidentRef?.affectedService || null,
     severity: obj.severity || incidentRef?.severity || null,
   }
 }
+
+

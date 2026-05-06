@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { X, Copy, Check, Plus, ChevronDown, Tag, Briefcase } from 'lucide-react'
+import { X, Copy, Check, Plus, ChevronDown, Tag, Briefcase, Mail, Lock, ExternalLink } from 'lucide-react'
 import { generateInvite, fetchRoles, addCustomRole, clearLastGenerated } from '../store/inviteSlice.js'
 
 // ─── Tag config ───────────────────────────────────────────────────────────────
 
 const TAG_OPTIONS = [
   {
-    value: 'creator',
-    label: 'Creator',
-    desc: 'Can create & manage incidents',
-    color: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    dot: 'bg-indigo-500',
+    value: 'manager',
+    label: 'Manager',
+    desc: 'Can manage incidents and team members',
+    color: 'bg-purple-50 text-purple-700 border-purple-200',
+    dot: 'bg-purple-500',
   },
   {
     value: 'responder',
-    label: 'Responder',
-    desc: 'Responds to assigned incidents',
+    label: 'Team Member',
+    desc: 'Handles incidents and responds to alerts',
     color: 'bg-green-50 text-green-700 border-green-200',
     dot: 'bg-green-500',
   },
@@ -49,15 +49,22 @@ function CopyBtn({ value }) {
   )
 }
 
-function Field({ label, value, mono, children }) {
+function Field({ label, value, mono, href, children }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2.5">
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">{label}</p>
         {children ?? (
-          <p className={`mt-0.5 truncate text-[13px] font-semibold text-[var(--text-primary,#1e293b)] ${mono ? 'font-mono' : ''}`}>
-            {value}
-          </p>
+          href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" 
+               className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] font-semibold text-blue-600 hover:underline">
+              {value} <ExternalLink size={12} />
+            </a>
+          ) : (
+            <p className={`mt-0.5 truncate text-[13px] font-semibold text-[var(--text-primary,#1e293b)] ${mono ? 'font-mono' : ''}`}>
+              {value}
+            </p>
+          )
         )}
       </div>
       {value && <CopyBtn value={value} />}
@@ -69,20 +76,25 @@ function Field({ label, value, mono, children }) {
 
 export default function InviteModal({ onClose }) {
   const dispatch = useDispatch()
-  const { defaultRoles, defaultSpecializations = [], customRoles, generating, lastGenerated, error } = useSelector((s) => s.invite)
+  const { defaultSpecializations = [], customRoles, generating, lastGenerated, error } = useSelector((s) => s.invite)
   const auth = useSelector((s) => s.auth)
-  const orgId = auth.user?.organizationId ?? auth.user?._id
+  const user = auth.user
+  const orgId = user?.organizationId ?? user?._id
+  const isAdmin = user?.role === 'admin'
 
   const [name, setName]               = useState('')
-  const [tag, setTag]                 = useState('')           // system role: manager | creator | responder
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
+  const [tag, setTag]                 = useState(isAdmin ? '' : 'responder') // system role: manager | responder
   const [specialization, setSpec]     = useState('')           // team role: Dev, DevOps, Tester…
   const [addingSpec, setAddingSpec]   = useState(false)
   const [newSpecName, setNewSpecName] = useState('')
   const [addSpecError, setAddSpecError] = useState('')
   const [step, setStep] = useState('form') // 'form' | 'result'
 
-  // We reuse the customRoles mechanism for custom specializations
-  const allSpecs = [...defaultSpecializations, ...customRoles.filter((r) => !defaultRoles.includes(r))]
+  const availableTags = isAdmin ? TAG_OPTIONS : TAG_OPTIONS.filter(t => t.value === 'responder')
+
+  const allSpecs = [...defaultSpecializations, ...customRoles]
 
   useEffect(() => {
     dispatch(fetchRoles())
@@ -95,8 +107,15 @@ export default function InviteModal({ onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!name.trim() || !tag) return
-    dispatch(generateInvite({ name: name.trim(), role: tag, specialization: specialization || null, organizationId: orgId }))
+    if (!name.trim() || !tag || !email.trim() || !password) return
+    dispatch(generateInvite({ 
+      name: name.trim(), 
+      email: email.trim(),
+      password,
+      role: tag, 
+      specialization: specialization || null, 
+      organizationId: orgId 
+    }))
   }
 
   const handleAddSpec = async () => {
@@ -116,7 +135,9 @@ export default function InviteModal({ onClose }) {
     dispatch(clearLastGenerated())
     setStep('form')
     setName('')
-    setTag('')
+    setEmail('')
+    setPassword('')
+    setTag(isAdmin ? '' : 'responder')
     setSpec('')
     onClose()
   }
@@ -124,12 +145,12 @@ export default function InviteModal({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-md rounded-[12px] bg-white shadow-xl">
+      <div className="w-full max-w-lg rounded-[12px] bg-white shadow-xl overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border,#e2e8f0)] px-5 py-4">
           <h2 className="text-[15px] font-semibold text-[var(--text-primary,#1e293b)]">
-            {step === 'form' ? 'Invite team member' : 'Credentials generated'}
+            {step === 'form' ? 'Add team member' : 'Member created successfully'}
           </h2>
           <button type="button" onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-[6px] text-slate-400 hover:bg-slate-100 hover:text-slate-600">
@@ -139,45 +160,77 @@ export default function InviteModal({ onClose }) {
 
         {/* ── Form step ── */}
         {step === 'form' && (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5 max-h-[85vh] overflow-y-auto">
 
-            {/* Full name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
-                Full name
-              </label>
-              <input required value={name} onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alice Johnson"
-                className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] px-3 py-2.5 text-[13px] outline-none placeholder:text-slate-400 focus:border-[var(--accent,#4f46e5)] focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/15" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Full name */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
+                  Full name
+                </label>
+                <input required value={name} onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Alice Johnson"
+                  className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] px-3 py-2.5 text-[13px] outline-none focus:border-[var(--accent,#4f46e5)] focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/15" />
+              </div>
+
+              {/* Organization (Read only) */}
+              <div className="flex flex-col gap-1.5 opacity-70">
+                <label className="text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
+                  Company
+                </label>
+                <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-slate-50 px-3 py-2.5 text-[13px] font-medium text-slate-600">
+                  {user?.organizationName || 'My Organization'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Email */}
+              <div className="flex flex-col gap-1.5">
+                <label className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
+                  <Mail size={12} /> Email address
+                </label>
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  placeholder="alice@company.com"
+                  className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] px-3 py-2.5 text-[13px] outline-none focus:border-[var(--accent,#4f46e5)] focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/15" />
+              </div>
+
+              {/* Password */}
+              <div className="flex flex-col gap-1.5">
+                <label className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
+                  <Lock size={12} /> Password
+                </label>
+                <input required type="text" value={password} onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] px-3 py-2.5 text-[13px] outline-none focus:border-[var(--accent,#4f46e5)] focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/15" />
+              </div>
             </div>
 
             {/* Role / Specialization */}
             <div className="flex flex-col gap-1.5">
               <label className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
-                <Briefcase size={12} />
-                Role / Team
+                <Briefcase size={12} /> Specialization / Department
               </label>
-              <p className="text-[11px] text-slate-400 -mt-1">Their job or department (e.g. Dev, DevOps, Tester)</p>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <select value={specialization} onChange={(e) => setSpec(e.target.value)}
                     className="w-full cursor-pointer appearance-none rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] px-3 py-2.5 pr-8 text-[13px] outline-none focus:border-[var(--accent,#4f46e5)] focus:ring-2 focus:ring-[var(--accent,#4f46e5)]/15">
-                    <option value="">Select role…</option>
+                    <option value="">Select specialization…</option>
                     {allSpecs.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                   <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
-                <button type="button" onClick={() => setAddingSpec(!addingSpec)} title="Add custom role"
+                <button type="button" onClick={() => setAddingSpec(!addingSpec)} title="Add custom specialization"
                   className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[8px] border border-[var(--border,#e2e8f0)] bg-white text-slate-400 hover:border-[var(--accent,#4f46e5)] hover:text-[var(--accent,#4f46e5)]">
                   <Plus size={16} />
                 </button>
               </div>
 
               {addingSpec && (
-                <div className="flex flex-col gap-1.5 rounded-[8px] border border-[var(--accent-border,#c7d2fe)] bg-[var(--accent-dim,#eef2ff)] p-3">
-                  <p className="text-[11px] font-semibold text-[var(--accent,#4f46e5)]">Add custom role</p>
+                <div className="flex flex-col gap-1.5 rounded-[8px] border border-[var(--accent-border,#c7d2fe)] bg-[var(--accent-dim,#eef2ff)] p-3 mt-1">
+                  <p className="text-[11px] font-semibold text-[var(--accent,#4f46e5)]">Add custom specialization</p>
                   <div className="flex gap-2">
                     <input value={newSpecName} onChange={(e) => setNewSpecName(e.target.value)}
                       placeholder="e.g. SRE, QA, Designer"
@@ -193,15 +246,13 @@ export default function InviteModal({ onClose }) {
               )}
             </div>
 
-            {/* Tag = system access level */}
+            {/* Tag = access level */}
             <div className="flex flex-col gap-1.5">
               <label className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">
-                <Tag size={12} />
-                Access tag
+                <Tag size={12} /> Access level
               </label>
-              <p className="text-[11px] text-slate-400 -mt-1">Determines what this person can do in the system</p>
-              <div className="flex flex-col gap-2">
-                {TAG_OPTIONS.map((t) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {availableTags.map((t) => (
                   <label key={t.value}
                     className={`flex cursor-pointer items-center gap-3 rounded-[8px] border px-3 py-2.5 transition-colors ${
                       tag === t.value
@@ -215,7 +266,6 @@ export default function InviteModal({ onClose }) {
                       <span className={`text-[13px] font-semibold ${tag === t.value ? 'text-[var(--accent,#4f46e5)]' : 'text-[var(--text-primary,#1e293b)]'}`}>
                         {t.label}
                       </span>
-                      <p className="text-[11px] text-slate-400">{t.desc}</p>
                     </div>
                     {tag === t.value && (
                       <Check size={14} className="shrink-0 text-[var(--accent,#4f46e5)]" />
@@ -229,49 +279,43 @@ export default function InviteModal({ onClose }) {
               <p className="rounded-[6px] bg-red-50 px-3 py-2 text-[12px] text-red-700">{error}</p>
             )}
 
-            <button type="submit" disabled={generating || !name.trim() || !tag}
-              className="w-full rounded-[8px] bg-[var(--accent,#4f46e5)] py-2.5 text-[13px] font-semibold text-white shadow-sm transition-opacity hover:brightness-110 disabled:opacity-50">
-              {generating ? 'Generating…' : 'Generate credentials'}
+            <button type="submit" disabled={generating || !name.trim() || !tag || !email.trim() || !password}
+              className="w-full mt-2 rounded-[8px] bg-[var(--accent,#4f46e5)] py-3 text-[13px] font-semibold text-white shadow-sm transition-opacity hover:brightness-110 disabled:opacity-50">
+              {generating ? 'Creating member…' : 'Create team member'}
             </button>
           </form>
         )}
 
         {/* ── Result step ── */}
         {step === 'result' && lastGenerated && (
-          <div className="flex flex-col gap-4 p-5">
-            <div className="flex items-center gap-2 rounded-[8px] bg-emerald-50 px-3 py-2.5">
-              <Check size={16} className="shrink-0 text-emerald-600" />
-              <p className="text-[13px] font-semibold text-emerald-800">Credentials generated successfully</p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Field label="Name" value={lastGenerated.name} />
-
-              <div className="flex gap-2">
-                {lastGenerated.specialization && (
-                  <div className="flex-1 rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">Role</p>
-                    <p className="mt-0.5 text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">{lastGenerated.specialization}</p>
-                  </div>
-                )}
-                <div className="flex-1 rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary,#64748b)]">Access tag</p>
-                  <div className="mt-0.5"><TagPill value={lastGenerated.role} /></div>
-                </div>
+          <div className="flex flex-col gap-4 p-5 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center gap-2 rounded-[8px] bg-emerald-50 px-4 py-3">
+              <Check size={18} className="shrink-0 text-emerald-600" />
+              <div>
+                <p className="text-[14px] font-bold text-emerald-800">Account created!</p>
+                <p className="text-[12px] text-emerald-700">Share these login details with {lastGenerated.name}.</p>
               </div>
-
-              <Field label="Login ID" value={lastGenerated.inviteId} mono />
-              <Field label="Temp Password" value={lastGenerated.tempPassword} mono />
-              <Field label="Share link" value={lastGenerated.shareLink} />
             </div>
 
-            <div className="flex items-start gap-2 rounded-[8px] border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] text-amber-800">
-              <span className="mt-0.5 text-amber-500">⚠</span>
-              Save these now. Password is shown only once and cannot be recovered.
+            <div className="flex flex-col gap-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <Field label="Full Name" value={lastGenerated.name} />
+                <Field label="Company" value={lastGenerated.organizationName || user?.organizationName} />
+              </div>
+              
+              <Field label="Email Address" value={lastGenerated.email} mono />
+              <Field label="Login Password" value={lastGenerated.password} mono />
+              
+              <Field label="Live System URL" value={lastGenerated.liveUrl} href={lastGenerated.liveUrl} />
+            </div>
+
+            <div className="flex items-start gap-2.5 rounded-[8px] border border-amber-200 bg-amber-50 px-3 py-3 text-[12px] text-amber-800">
+              <span className="mt-0.5 text-amber-500 font-bold">!</span>
+              <p>Please save these details. The password is only shown once for security.</p>
             </div>
 
             <button type="button" onClick={handleDone}
-              className="w-full rounded-[8px] bg-[var(--accent,#4f46e5)] py-2.5 text-[13px] font-semibold text-white hover:brightness-110">
+              className="w-full mt-2 rounded-[8px] bg-[var(--accent,#4f46e5)] py-3 text-[13px] font-semibold text-white hover:brightness-110">
               Done
             </button>
           </div>
