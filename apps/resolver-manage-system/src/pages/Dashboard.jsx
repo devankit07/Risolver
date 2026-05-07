@@ -75,7 +75,7 @@ export default function Dashboard() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const canCreateIncident = ['admin', 'manager', 'creator'].includes(authUser?.role)
-  const isAdmin = authUser?.role === 'admin'
+  const canInviteMembers = ['admin', 'manager'].includes(authUser?.role)
 
   const incidents = useSelector((s) => s.incidents.list)
   const team = useSelector((s) => s.team.members)
@@ -217,7 +217,7 @@ export default function Dashboard() {
                 <span className="text-[12px] font-semibold">New incident</span>
               </button>
             )}
-            {isAdmin && (
+            {canInviteMembers && (
               <button
                 type="button"
                 onClick={() => setInviteOpen(true)}
@@ -228,7 +228,7 @@ export default function Dashboard() {
               </button>
             )}
           </div>
-          {!canCreateIncident && !isAdmin && (
+          {!canCreateIncident && !canInviteMembers && (
             <p className="mt-4 text-center text-[12px] text-[var(--text-secondary,#64748b)]">
               Open incidents from the sidebar. Your admin can send team invites.
             </p>
