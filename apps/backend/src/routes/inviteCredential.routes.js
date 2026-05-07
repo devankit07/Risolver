@@ -11,10 +11,10 @@ import { authenticateUser, authorizeRoles } from '../middleware/auth.middleware.
 
 const inviteCredRouter = express.Router()
 
-inviteCredRouter.post('/generate', authenticateUser, authorizeRoles('admin'), generateCredentials)
-inviteCredRouter.get('/', authenticateUser, authorizeRoles('admin'), getInvites)
+inviteCredRouter.post('/generate', authenticateUser, authorizeRoles('admin', 'manager'), generateCredentials)
+inviteCredRouter.get('/', authenticateUser, authorizeRoles('admin', 'manager'), getInvites)
 inviteCredRouter.get('/roles', authenticateUser, getRoles)
-inviteCredRouter.post('/roles/add', authenticateUser, authorizeRoles('admin'), addCustomRole)
+inviteCredRouter.post('/roles/add', authenticateUser, authorizeRoles('admin', 'manager'), addCustomRole)
 inviteCredRouter.get('/validate', validateInvite)
 inviteCredRouter.post('/setup', setupInviteAccount)
 

@@ -47,7 +47,7 @@ export default function Team() {
   const dispatch = useDispatch()
   const { members = [], total = 0, loading = false } = useSelector((s) => s?.team || {})
   const currentUser = useSelector((s) => s.auth.user)
-  const isAdmin = currentUser?.role === 'admin'
+  const isPrivileged = currentUser?.role?.toLowerCase() === 'admin' || currentUser?.role?.toLowerCase() === 'manager'
   const myId = String(currentUser?._id ?? currentUser?.id ?? '')
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('All')
@@ -128,7 +128,7 @@ export default function Team() {
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--accent,#4f46e5)]">▾</span>
         </div>
 
-        {isAdmin && (
+        {isPrivileged && (
           <button
             type="button"
             onClick={() => setInviteOpen(true)}
@@ -181,7 +181,7 @@ export default function Team() {
                   {member.department && (
                     <p className="mt-2 text-[12px] text-[var(--text-secondary,#64748b)]">{member.department}</p>
                   )}
-                  {(isAdmin || String(member._id ?? member.id) === myId) && (
+                  {(isPrivileged || String(member._id ?? member.id) === myId) && (
                     <button
                       type="button"
                       onClick={() => navigate(`/team/${member._id ?? member.id}`)}
@@ -294,7 +294,7 @@ export default function Team() {
                       {formatDate(member.createdAt)}
                     </td>
                     <td className="py-3 px-3">
-                      {(isAdmin || String(member._id ?? member.id) === myId) && (
+                      {(isPrivileged || String(member._id ?? member.id) === myId) && (
                         <button
                           type="button"
                           onClick={() => navigate(`/team/${member._id ?? member.id}`)}

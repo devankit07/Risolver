@@ -80,21 +80,21 @@ export default function InviteModal({ onClose }) {
   const auth = useSelector((s) => s.auth)
   const user = auth.user
   const orgId = user?.organizationId ?? user?._id
-  const isAdmin = user?.role === 'admin'
+  const isPrivileged = user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'manager'
 
   const [name, setName]               = useState('')
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
-  const [tag, setTag]                 = useState(isAdmin ? '' : 'responder') // system role: manager | responder
+  const [tag, setTag]                 = useState(isPrivileged ? '' : 'responder') // system role: manager | responder
   const [specialization, setSpec]     = useState('')           // team role: Dev, DevOps, Tester…
   const [addingSpec, setAddingSpec]   = useState(false)
   const [newSpecName, setNewSpecName] = useState('')
   const [addSpecError, setAddSpecError] = useState('')
   const [step, setStep] = useState('form') // 'form' | 'result'
 
-  const availableTags = isAdmin ? TAG_OPTIONS : TAG_OPTIONS.filter(t => t.value === 'responder')
+  const availableTags = isPrivileged ? TAG_OPTIONS : TAG_OPTIONS.filter(t => t.value === 'responder')
 
-  const allSpecs = [...defaultSpecializations, ...customRoles]
+  const allSpecs = Array.from(new Set([...defaultSpecializations, ...customRoles]))
 
   useEffect(() => {
     dispatch(fetchRoles())
@@ -137,7 +137,7 @@ export default function InviteModal({ onClose }) {
     setName('')
     setEmail('')
     setPassword('')
-    setTag(isAdmin ? '' : 'responder')
+    setTag(isPrivileged ? '' : 'responder')
     setSpec('')
     onClose()
   }

@@ -8,88 +8,24 @@ import {
   TimelineItem,
   AiTriageCard,
 } from '@resolver/ui'
-import { Sparkles, Paperclip, Hash, Github } from 'lucide-react'
+import { Sparkles, Paperclip, Hash, Github, FileText, X } from 'lucide-react'
 import { updateRealtimeIncident } from '../store/incidentsSlice.js'
 import api from '../services/api.js'
 import { getSocketOrigin } from '../config/apiUrl.js'
 
 const API = getSocketOrigin()
 
-export default function Workspace() {
-  const { incidentId } = useParams()
-  const navigate = useNavigate()
-  /** @type {any} */
-  const dispatch = useDispatch()
-  const { list, triageLoading, triageData } = useSelector((/** @type {any} */ s) => s.incidents) // triageLoading drives AI card
-
-  const incident = list.find((i) => i.id === incidentId) ?? {
-    id: incidentId ?? '',
-    title: incidentId ? `Incident ${incidentId}` : 'Incident',
-    status: 'open',
-    severity: 'medium',
-    service: '—',
-    assignees: [],
-    createdAt: '—',
-  }
-
-  const [manualApproach, setManualApproach] = useState('')
-  const [aiSummary, setAiSummary] = useState(null)
-  const [aiSuggestion, setAiSuggestion] = useState(null)
-  const [loadingSummary, setLoadingSummary] = useState(false)
-  const [loadingSuggestion, setLoadingSuggestion] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-
-  const [timeline, setTimeline] = useState([])
-  const [updateText, setUpdateText] = useState('')
-  const [updateType, setUpdateType] = useState('Update')
-  const [resolution, setResolution] = useState(null)
-  const [githubUrl, setGithubUrl] = useState('')
-  const [resolved, setResolved] = useState(false)
-  const [repoAnalyzing, setRepoAnalyzing] = useState(false)
-  const feedRef = useRef(null)
-
-  const rawTriage = triageData[incidentId]
-  const triage = {
-    summary: Array.isArray(rawTriage?.summary) ? rawTriage.summary : [],
-    suggestions: Array.isArray(rawTriage?.suggestions) ? rawTriage.suggestions : [],
-  }
-
-  useEffect(() => {
-    if (!API) return
-    const socketClient = io(`${API}/incidents`, {
-      transports: ['websocket'],
-      auth: { token: localStorage.getItem('resolver_token') ?? localStorage.getItem('token') ?? '' },
-    })
-    socketClient.emit('incident:subscribe', { incidentId })
-    socketClient.on('incident:update', (payload) => {
-      dispatch(updateRealtimeIncident(payload))
-      if (payload.timelineEntry) {
-        setTimeline((prev) => [payload.timelineEntry, ...prev])
-      }
-    })
-    return () => {
-      socketClient.disconnect()
-    }
-  }, [incidentId, dispatch])
-
-  function postUpdate() {
-    if (!updateText.trim()) return
-    const entry = {
-      id: `t${Date.now()}`,
-      type: updateType.toLowerCase(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      author: 'You',
-      content: updateText.trim(),
-    }
-    setTimeline((prev) => [entry, ...prev])
-    setUpdateText('')
-  }
+  const [aiMode, setAiMode] = useState(null) // 'summary' | 'suggestion'
+  const [isResolving, setIsResolving] = useState(false)
+  const [reportData, setReportData] = useState({ whatHappened: '', solution: '' })
 
   const fetchSummary = async () => {
     try {
       setLoadingSummary(true)
       const { data } = await api.get(`/ai/${incidentId}/summarize`)
       setAiSummary(data.summary)
+      setAiMode('summary')
+      setReportData(prev => ({ ...prev, whatHappened: data.summary?.join('\n') || '' }))
     } catch (err) {
       console.error('Failed to fetch summary', err)
     } finally {
@@ -102,6 +38,13 @@ export default function Workspace() {
       setLoadingSuggestion(true)
       const { data } = await api.get(`/ai/${incidentId}/suggest-fix`)
       setAiSuggestion(data)
+      setAiMode('suggestion')
+      // Pre-fill both for suggestion mode
+      setReportData({
+        whatHappened: aiSummary?.join('\n') || '',
+        solution: data.approach || ''
+      })
+      if (!aiSummary) fetchSummary()
     } catch (err) {
       console.error('Failed to fetch suggestion', err)
     } finally {
@@ -109,36 +52,27 @@ export default function Workspace() {
     }
   }
 
-  async function handleResolve(isAi = false) {
+  async function handleSendReport() {
     try {
       setSubmitting(true)
       await api.post('/postmortems', {
         incidentId,
-        approach: isAi ? aiSuggestion?.approach : manualApproach,
-        isAiGenerated: isAi
+        whatHappened: reportData.whatHappened,
+        solutionApplied: reportData.solution,
+        isAiGenerated: aiMode !== null,
+        status: 'pending_approval'
       })
       setResolved(true)
+      setIsResolving(false)
     } catch (err) {
-      console.error('Failed to resolve incident', err)
+      console.error('Failed to send report', err)
     } finally {
       setSubmitting(false)
     }
   }
 
-  useEffect(() => {
-    if (resolution === 'ai_suggestion' && !aiSuggestion) {
-      fetchSuggestion()
-    }
-  }, [resolution])
-
-  function handleAiSolutionConfirm() {
-    if (!githubUrl.trim()) return
-    setRepoAnalyzing(true)
-    window.setTimeout(() => setRepoAnalyzing(false), 1600)
-  }
-
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 h-[calc(100vh-120px)]">
       <WorkspaceHeader
         incidentId={incident.id}
         title={incident.title}
@@ -146,203 +80,181 @@ export default function Workspace() {
         status={incident.status}
         assigneeName={incident.assignees?.[0]}
         onBack={() => navigate(-1)}
-        onMarkResolved={() => handleResolve(false)}
+        onMarkResolved={() => setIsResolving(true)}
         resolved={resolved}
-        resolutionMethod={resolution === 'ai_solution' ? 'AI Solution' : resolution === 'ai_suggestion' ? 'AI Suggestion' : resolution === 'manual' ? 'Manual' : undefined}
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[380px_minmax(0,1fr)_280px]">
-        {/* Column 1 */}
-        <div className="flex flex-col gap-4">
-          <div className="relative rounded-[12px] border border-[var(--border,#e2e8f0)] bg-white p-5 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-semibold text-[#1e293b] flex items-center gap-2">
-                <Sparkles size={16} className="text-indigo-600" />
-                AI Workspace
-              </h3>
-              {!aiSummary && (
-                <button 
-                  onClick={fetchSummary}
-                  disabled={loadingSummary}
-                  className="text-[12px] font-medium text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
-                >
-                  {loadingSummary ? 'Summarizing...' : 'Generate Summary'}
-                </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full overflow-hidden">
+        {/* Left Container: Incident & AI */}
+        <div className="flex flex-col gap-4 overflow-y-auto pr-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">{incident.title}</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">{incident.description}</p>
+            
+            <div className="flex flex-wrap gap-2 mb-6">
+              <span className="px-2 py-1 bg-slate-100 rounded text-[11px] font-bold text-slate-500 uppercase tracking-wider border border-slate-200">
+                Service: {incident.service || '—'}
+              </span>
+              <span className="px-2 py-1 bg-slate-100 rounded text-[11px] font-bold text-slate-500 uppercase tracking-wider border border-slate-200">
+                Severity: {incident.severity}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={fetchSummary}
+                disabled={loadingSummary}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${aiMode === 'summary' ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/10' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+              >
+                <Sparkles className={aiMode === 'summary' ? 'text-indigo-600' : 'text-slate-400'} size={20} />
+                <span className="text-[13px] font-bold text-slate-900">AI Summary</span>
+                <span className="text-[11px] text-slate-500 text-center">Break incident into points</span>
+              </button>
+
+              <button 
+                onClick={fetchSuggestion}
+                disabled={loadingSuggestion}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${aiMode === 'suggestion' ? 'border-indigo-500 bg-indigo-50/50 ring-2 ring-indigo-500/10' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+              >
+                <div className="flex items-center gap-1">
+                  <Sparkles className={aiMode === 'suggestion' ? 'text-indigo-600' : 'text-slate-400'} size={20} />
+                  <span className="text-indigo-600 font-bold text-[14px]">+</span>
+                </div>
+                <span className="text-[13px] font-bold text-slate-900">Summary + Fix</span>
+                <span className="text-[11px] text-slate-500 text-center">Points + Hint/Approach</span>
+              </button>
+            </div>
+          </div>
+
+          {(aiSummary || aiSuggestion) && (
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50/30 p-6">
+              <h4 className="text-[13px] font-bold text-indigo-900 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                <Sparkles size={14} /> AI Analysis
+              </h4>
+              
+              {aiSummary && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Breakdown</p>
+                  {aiSummary.map((p, i) => (
+                    <div key={i} className="flex gap-2 text-[13px] text-slate-700 leading-relaxed">
+                      <span className="text-indigo-500 font-black">•</span>
+                      <span>{p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {aiSuggestion && (
+                <div className="space-y-2 pt-4 border-t border-indigo-100">
+                  <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Suggested Approach (Hint)</p>
+                  <p className="text-[13px] text-slate-700 leading-relaxed italic">"{aiSuggestion.approach}"</p>
+                </div>
               )}
             </div>
-            
-            {aiSummary ? (
-              <div className="space-y-3">
-                {aiSummary.map((point, idx) => (
-                  <div key={idx} className="flex gap-2 text-[13px] text-[#475569] leading-relaxed">
-                    <span className="text-indigo-500 font-bold">•</span>
-                    <span>{point}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[13px] text-[#64748b] italic">Click to generate an AI summary of this incident for better understanding.</p>
-            )}
-          </div>
+          )}
 
           {!resolved && (
-            <ResolutionMethodCard selected={resolution} onSelect={(m) => setResolution(m)} />
+            <button 
+              onClick={() => setIsResolving(true)}
+              className="w-full rounded-xl bg-slate-900 py-4 text-sm font-bold text-white shadow-xl shadow-slate-200 hover:bg-indigo-600 transition-all flex items-center justify-center gap-2 mt-auto"
+            >
+              Resolve Incident →
+            </button>
           )}
+        </div>
 
-          {resolution === 'ai_suggestion' && !resolved && (
-            <div className="rounded-[12px] border border-indigo-100 bg-indigo-50/50 p-5">
-              <h4 className="text-[13px] font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                <Sparkles size={14} />
-                AI Suggested Approach
-              </h4>
-              {loadingSuggestion ? (
-                <div className="flex items-center gap-2 text-[13px] text-indigo-600">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-                  Analyzing problem and logs...
+        {/* Right Container: Timeline OR Report Draft */}
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden h-full">
+          {!isResolving ? (
+            <>
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+                <span className="text-[13px] font-bold text-slate-900 uppercase tracking-widest">Live timeline</span>
+                <div className="flex gap-1">
+                  {['Update', 'Escalation', 'Note'].map(t => (
+                    <button key={t} onClick={() => setUpdateType(t)} className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${updateType === t ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400'}`}>
+                      {t}
+                    </button>
+                  ))}
                 </div>
-              ) : aiSuggestion ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[13px] font-medium text-indigo-800">Approach:</p>
-                    <p className="mt-1 text-[13px] text-indigo-950/80 leading-relaxed">{aiSuggestion.approach}</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {timeline.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
+                    <Hash size={32} strokeWidth={1} />
+                    <p className="text-sm italic">No entries yet.</p>
                   </div>
-                  <div>
-                    <p className="text-[13px] font-medium text-indigo-800">Steps to fix:</p>
-                    <ul className="mt-2 space-y-2">
-                      {aiSuggestion.steps?.map((step, i) => (
-                        <li key={i} className="flex gap-2 text-[13px] text-indigo-950/70">
-                          <span className="font-mono text-[11px] bg-indigo-100 px-1.5 rounded h-5 flex items-center">{i+1}</span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                ) : (
+                  timeline.map((item, idx) => (
+                    <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
+                  ))
+                )}
+              </div>
+              <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                <div className="relative">
+                  <textarea
+                    rows={3}
+                    value={updateText}
+                    onChange={(e) => setUpdateText(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[13px] outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                    placeholder="Post an update…"
+                  />
                   <button
-                    onClick={() => handleResolve(true)}
-                    disabled={submitting}
-                    className="w-full rounded-[8px] bg-indigo-600 py-2.5 text-[13px] font-semibold text-white shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-70"
+                    onClick={postUpdate}
+                    className="absolute bottom-3 right-3 rounded-lg bg-indigo-600 px-4 py-1.5 text-[11px] font-bold text-white shadow-md hover:bg-indigo-700 transition-all"
                   >
-                    {submitting ? 'Generating Report...' : 'Use AI Approach & Resolve'}
+                    Post
                   </button>
                 </div>
-              ) : null}
-            </div>
-          )}
-
-          {resolution === 'manual' && !resolved && (
-            <div className="rounded-[12px] border border-[var(--border,#e2e8f0)] bg-white p-5 shadow-sm">
-               <h4 className="text-[13px] font-semibold text-[#1e293b] mb-3">Manual Resolution</h4>
-              <textarea
-                rows={4}
-                value={manualApproach}
-                onChange={(e) => setManualApproach(e.target.value)}
-                placeholder="Describe what you did to resolve this…"
-                className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
-              <button
-                type="button"
-                onClick={() => handleResolve(false)}
-                disabled={submitting || !manualApproach.trim()}
-                className="mt-3 w-full rounded-[8px] bg-slate-800 py-2.5 text-[13px] font-semibold text-white hover:bg-indigo-600 transition-all disabled:opacity-50"
-              >
-                {submitting ? 'Submitting...' : 'Submit Resolution →'}
-              </button>
-            </div>
-          )}
-        </div>
-
-
-
-        {/* Column 2 */}
-        <div className="flex min-h-[520px] flex-col rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)]">
-          <div className="flex items-center justify-between border-b border-[var(--border,#e2e8f0)] px-4 py-3">
-            <span className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Live timeline</span>
-            <button type="button" className="rounded-[6px] bg-[var(--accent,#4f46e5)] px-3 py-1 text-[11px] font-semibold text-white">
-              Post update
-            </button>
-          </div>
-          <div ref={feedRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-            {timeline.length === 0 ? (
-              <p className="py-8 text-center text-[13px] text-[var(--text-secondary,#64748b)]">No timeline entries yet.</p>
-            ) : (
-              timeline.map((item, idx) => (
-                <TimelineItem key={item.id} variant="light" item={item} isLast={idx === timeline.length - 1} />
-              ))
-            )}
-          </div>
-          <div className="border-t border-[var(--border,#e2e8f0)] p-3">
-            <div className="mb-2 flex gap-2">
-              {['Update', 'Escalation', 'Note'].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setUpdateType(t)}
-                  className={`rounded-[6px] px-3 py-1 text-[11px] font-semibold ${
-                    updateType === t ? 'bg-[var(--accent-dim,#eef2ff)] text-[var(--accent,#4f46e5)]' : 'text-[var(--text-secondary,#64748b)]'
-                  }`}
-                >
-                  {t}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-indigo-50/30">
+                <span className="text-[13px] font-bold text-indigo-900 uppercase tracking-widest flex items-center gap-2">
+                  <FileText size={16} /> Draft Postmortem
+                </span>
+                <button onClick={() => setIsResolving(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={18} />
                 </button>
-              ))}
-            </div>
-            <textarea
-              rows={3}
-              value={updateText}
-              onChange={(e) => setUpdateText(e.target.value)}
-              className="w-full rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-base,#f8fafc)] px-3 py-2 text-[13px] outline-none"
-              placeholder="Post an update…"
-            />
-            <div className="mt-2 flex items-center justify-between">
-              <div className="flex gap-2 text-[var(--text-secondary,#64748b)]">
-                <Paperclip size={18} />
-                <Hash size={18} />
               </div>
-              <button
-                type="button"
-                onClick={postUpdate}
-                className="rounded-[6px] bg-[var(--accent,#4f46e5)] px-4 py-2 text-[12px] font-semibold text-white"
-              >
-                Post
-              </button>
-            </div>
-          </div>
-        </div>
+              
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Problem Summary (What happened?)</label>
+                  <textarea
+                    rows={6}
+                    value={reportData.whatHappened}
+                    onChange={(e) => setReportData(prev => ({ ...prev, whatHappened: e.target.value }))}
+                    placeholder="AI will help you break this down if you use Summary mode..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-[13px] leading-relaxed outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                  />
+                  {aiMode === 'summary' && <p className="text-[10px] text-indigo-500 font-medium italic">Pre-filled using AI Summary breakdown.</p>}
+                </div>
 
-        {/* Column 3 */}
-        <div className="flex flex-col gap-4">
-          <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Recent commits</span>
-              <Github size={16} className="text-[var(--text-secondary,#64748b)]" />
-            </div>
-            <p className="mt-1 text-[11px] text-[var(--text-secondary,#64748b)]">from linked repository</p>
-            <div className="mt-4 flex flex-col">
-              <p className="py-2 text-[13px] text-[var(--text-secondary,#64748b)]">No commits linked yet.</p>
-            </div>
-            <button type="button" className="mt-3 text-[12px] font-semibold text-[var(--accent,#4f46e5)] hover:underline">
-              View on GitHub →
-            </button>
-          </div>
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Resolution Applied (How we fixed it?)</label>
+                  <textarea
+                    rows={6}
+                    value={reportData.solution}
+                    onChange={(e) => setReportData(prev => ({ ...prev, solution: e.target.value }))}
+                    placeholder="Type manually or use Summary+Fix for an AI hint..."
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-[13px] leading-relaxed outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/10 transition-all"
+                  />
+                  {aiMode === 'suggestion' && <p className="text-[10px] text-indigo-500 font-medium italic">Pre-filled using AI Suggestion hint.</p>}
+                </div>
+              </div>
 
-          <div className="rounded-[8px] border border-[var(--border,#e2e8f0)] bg-[var(--bg-surface,#fff)] p-4">
-            <p className="text-[13px] font-semibold text-[var(--text-primary,#1e293b)]">Incident details</p>
-            <dl className="mt-3 space-y-2 text-[12px]">
-              <div className="flex justify-between gap-2">
-                <dt className="text-[var(--text-secondary,#64748b)]">Service</dt>
-                <dd className="font-medium">{incident.service}</dd>
+              <div className="p-6 border-t border-slate-100">
+                <button 
+                  onClick={handleSendReport}
+                  disabled={submitting || !reportData.whatHappened.trim() || !reportData.solution.trim()}
+                  className="w-full rounded-xl bg-indigo-600 py-4 text-sm font-bold text-white shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-50"
+                >
+                  {submitting ? 'Sending...' : 'Send for Approval →'}
+                </button>
               </div>
-              <div className="flex justify-between gap-2">
-                <dt className="text-[var(--text-secondary,#64748b)]">Created</dt>
-                <dd>{incident.createdAt}</dd>
-              </div>
-            </dl>
-            {resolved && (
-              <p className="mt-4 text-[12px] font-semibold text-[var(--accent,#4f46e5)]">
-                <Sparkles className="mr-1 inline h-3 w-3" />
-                View full report
-              </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

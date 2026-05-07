@@ -195,22 +195,24 @@ export const getPublicPostmortemById = async (req, res) => {
 export const createPostmortem = async (req, res) => {
   try {
     const orgId = req.user.organizationId
-    const { incidentId, approach, isAiGenerated } = req.body
+    const { incidentId, approach, isAiGenerated, whatHappened, solutionApplied } = req.body
 
     const incident = await incidentModel.findOne({ _id: incidentId, organizationId: orgId }).populate('timeline.author', 'name')
     if (!incident) return sendResponse(res, 404, false, 'Incident not found')
 
     let postmortemData = {}
 
-    if (isAiGenerated) {
-      // Generate using GROQ
+    if (isAiGenerated && !whatHappened) {
+      // Generate using GROQ if no detailed data provided
       postmortemData = await generatePostmortem(incident, incident.timeline, req.user)
     } else {
-      // Manual submission
+      // Manual or AI-assisted detailed submission
       postmortemData = {
-        summary: incident.description,
-        rootCause: 'Under investigation',
-        whatWorked: approach || 'No approach provided',
+        summary: whatHappened || incident.description,
+        whatHappened: whatHappened || incident.description,
+        rootCause: 'Investigation completed',
+        solutionApplied: solutionApplied || approach || 'No solution provided',
+        whatWorked: solutionApplied || approach || 'No approach provided',
         whatDidntWork: 'N/A',
         recommendations: 'N/A',
         impact: `Service: ${incident.service}`,
@@ -238,6 +240,7 @@ export const createPostmortem = async (req, res) => {
       title: 'New report pending approval',
       body: `${req.user.name} submitted a report for: ${incident.title}`,
       incidentId: incidentId,
+      postmortemId: postmortem._id,
     }))
     const notifications = await Promise.all(notificationPromises)
 

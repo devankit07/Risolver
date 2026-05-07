@@ -30,6 +30,11 @@ const notificationSchema = new mongoose.Schema({
     ref: 'Incident',
     default: null
   },
+  postmortemId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PostMortem',
+    default: null
+  },
   isRead: {
     type: Boolean,
     default: false

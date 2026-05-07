@@ -57,8 +57,60 @@ export default function ReportDetail() {
   const svc = report.service || incRef.service || incRef.affectedService || '—'
   const isAI = report.generatedBy === 'ai'
 
+  const currentUser = useSelector((s) => s.auth.user)
+  const isPrivileged = currentUser?.role?.toLowerCase() === 'admin' || currentUser?.role?.toLowerCase() === 'manager'
+
+  const handleApprove = async () => {
+    try {
+      await api.patch(`/postmortems/${id}/approve`, { action: 'approve' })
+      dispatch(fetchPostmortemDetail(id))
+    } catch (err) {
+      console.error('Failed to approve report', err)
+    }
+  }
+
+  const handleRequestChanges = async () => {
+    try {
+      await api.patch(`/postmortems/${id}/approve`, { action: 'request_changes', feedback: 'Please provide more details.' })
+      dispatch(fetchPostmortemDetail(id))
+    } catch (err) {
+      console.error('Failed to request changes', err)
+    }
+  }
+
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-white px-6 py-12 md:px-10">
+      {/* Approval Banner */}
+      {report.status === 'pending_approval' && (
+        <div className="mb-8 flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <ShieldAlert size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-900">Awaiting Approval</p>
+              <p className="text-xs text-amber-700">This report has been submitted and is waiting for a manager to review and publish it.</p>
+            </div>
+          </div>
+          {isPrivileged && (
+            <div className="flex gap-3">
+              <button 
+                onClick={handleRequestChanges}
+                className="rounded-xl border border-amber-200 bg-white px-4 py-2 text-[13px] font-bold text-amber-700 hover:bg-amber-100 transition-all"
+              >
+                Request Changes
+              </button>
+              <button 
+                onClick={handleApprove}
+                className="rounded-xl bg-amber-600 px-6 py-2 text-[13px] font-bold text-white shadow-lg shadow-amber-100 hover:bg-amber-700 transition-all"
+              >
+                Approve & Publish
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top Navigation */}
       <div className="mb-10 flex items-center justify-between">
         <button
@@ -142,7 +194,7 @@ export default function ReportDetail() {
         <Section title="Root Cause Analysis">
           <div className="flex flex-col gap-5">
             <p className="text-[17px] leading-relaxed text-slate-800 font-bold bg-white shadow-sm border border-slate-100 p-8 rounded-2xl">
-              {report.rootCause}
+              {report.rootCause || report.solutionApplied || 'Investigation completed and resolution applied.'}
             </p>
           </div>
         </Section>

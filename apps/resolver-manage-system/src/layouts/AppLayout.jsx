@@ -95,7 +95,7 @@ export default function AppLayout() {
     if (token || localStorage.getItem('manage_token')) return true
     try {
       const u = JSON.parse(localStorage.getItem('resolver_user') || 'null')
-      if ((u?.role === 'admin' || u?.role === 'manager') && localStorage.getItem('resolver_token')) return true
+      if ((u?.role?.toLowerCase() === 'admin' || u?.role?.toLowerCase() === 'manager') && localStorage.getItem('resolver_token')) return true
     } catch { /* ignore */ }
     return false
   })()

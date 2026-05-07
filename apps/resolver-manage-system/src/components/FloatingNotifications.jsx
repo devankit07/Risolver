@@ -19,20 +19,21 @@ export default function FloatingNotifications() {
       const latest = list[0];
       
       // Only show if it's new, not already shown this session, and recent
+      const latestId = String(latest._id ?? '');
       const isRecent = new Date(latest.createdAt).getTime() > Date.now() - 15000;
-      const alreadyShown = shownIds.current.has(latest._id);
+      const alreadyShown = latestId ? shownIds.current.has(latestId) : false;
 
-      if (!latest.isRead && isRecent && !alreadyShown) {
-        shownIds.current.add(latest._id);
+      if (!latest.isRead && isRecent && !alreadyShown && latestId) {
+        shownIds.current.add(latestId);
         
         setActiveToasts((prev) => {
-          if (prev.some(t => t._id === latest._id)) return prev;
+          if (prev.some(t => String(t._id ?? '') === latestId)) return prev;
           return [...prev, latest];
         });
 
         // Auto remove after 6 seconds
         setTimeout(() => {
-          setActiveToasts((prev) => prev.filter(t => t._id !== latest._id));
+          setActiveToasts((prev) => prev.filter(t => String(t._id ?? '') !== latestId));
         }, 6000);
       }
     }
@@ -64,7 +65,9 @@ export default function FloatingNotifications() {
                 {(n.incidentId || n.type?.startsWith('report')) && (
                   <button
                     onClick={() => {
-                      if (n.type === 'report_submitted' || n.type === 'report_pending') {
+                      if (n.postmortemId) {
+                        navigate(`/reports/${n.postmortemId}`);
+                      } else if (n.type === 'report_submitted' || n.type === 'report_pending') {
                         navigate('/reports');
                       } else if (n.incidentId) {
                         navigate(`/workspace/${n.incidentId}`);
