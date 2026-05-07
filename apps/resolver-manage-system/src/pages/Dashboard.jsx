@@ -230,7 +230,7 @@ export default function Dashboard() {
           </div>
           {!canCreateIncident && !canInviteMembers && (
             <p className="mt-4 text-center text-[12px] text-[var(--text-secondary,#64748b)]">
-              Open incidents from the sidebar. Your admin can send team invites.
+              Open incidents from the sidebar. Your admin or manager can send team invites.
             </p>
           )}
         </SurfaceCard>
@@ -338,6 +338,13 @@ export default function Dashboard() {
                 ))
               )}
             </div>
+            <button
+              type="button"
+              className={`${primaryBtn} mt-4 shrink-0`}
+              onClick={() => navigate('/incidents/active')}
+            >
+              Open incidents
+            </button>
           </SurfaceCard>
         </div>
 
@@ -368,6 +375,13 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+            <button
+              type="button"
+              className={`${primaryBtn} mt-4 shrink-0`}
+              onClick={() => navigate('/workspace')}
+            >
+              Open workspace
+            </button>
           </SurfaceCard>
 
           <SurfaceCard className="flex min-h-0 flex-1 flex-col p-6">
