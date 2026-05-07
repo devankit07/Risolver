@@ -90,10 +90,10 @@ export default function HeroSection() {
             /* ── logged-out CTAs ── */
             <>
               <Link
-                to="/register"
+                to="/login"
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500"
               >
-                Register
+                Access your work
               </Link>
               <Link
                 to="/docs"

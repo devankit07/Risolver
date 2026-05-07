@@ -180,17 +180,12 @@ export function Navbar({ user, onLogout }) {
               </NavLink>
             </>
           ) : (
-            <>
-              <NavLink to="/login" className="text-sm font-semibold text-slate-600 transition hover:text-slate-900">
-                Sign in
-              </NavLink>
-              <NavLink
-                to="/register"
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-              >
-                Register
-              </NavLink>
-            </>
+            <NavLink
+              to="/login"
+              className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            >
+              Access your work
+            </NavLink>
           )}
         </div>
 
@@ -271,16 +266,13 @@ export function Navbar({ user, onLogout }) {
                     </button>
                   </>
                 ) : (
-                  <>
-                    <NavLink to="/login" onClick={() => setOpen(false)}
-                      className="w-full py-3 text-center text-sm font-semibold text-slate-600 hover:text-slate-900">
-                      Sign in
-                    </NavLink>
-                    <NavLink to="/register" onClick={() => setOpen(false)}
-                      className="inline-flex w-full items-center justify-center rounded-full bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500">
-                      Register
-                    </NavLink>
-                  </>
+                  <NavLink
+                    to="/login"
+                    onClick={() => setOpen(false)}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                  >
+                    Access your work
+                  </NavLink>
                 )}
               </div>
             </div>
