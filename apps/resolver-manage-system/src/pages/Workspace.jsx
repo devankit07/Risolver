@@ -15,6 +15,60 @@ import { getSocketOrigin } from '../config/apiUrl.js'
 
 const API = getSocketOrigin()
 
+export default function Workspace() {
+  const { incidentId } = useParams()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const { list } = useSelector((s) => s.incidents)
+  const incident = list.find((i) => String(i._id || i.id) === incidentId) ?? {
+    id: incidentId ?? '',
+    title: 'Incident',
+    severity: 'high',
+    status: 'open'
+  }
+
+  const [loadingSummary, setLoadingSummary] = useState(false)
+  const [loadingSuggestion, setLoadingSuggestion] = useState(false)
+  const [aiSummary, setAiSummary] = useState(null)
+  const [aiSuggestion, setAiSuggestion] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [resolved, setResolved] = useState(incident.status === 'resolved')
+
+  const [timeline, setTimeline] = useState([])
+  const [updateText, setUpdateText] = useState('')
+  const [updateType, setUpdateType] = useState('Update')
+
+  useEffect(() => {
+    if (!API) return
+    const socketClient = io(`${API}/incidents`, {
+      transports: ['websocket'],
+      auth: { token: localStorage.getItem('resolver_token') ?? localStorage.getItem('token') ?? '' },
+    })
+    socketClient.emit('incident:subscribe', { incidentId })
+    socketClient.on('incident:update', (payload) => {
+      dispatch(updateRealtimeIncident(payload))
+      if (payload.timelineEntry) {
+        setTimeline((prev) => [payload.timelineEntry, ...prev])
+      }
+    })
+    return () => {
+      socketClient.disconnect()
+    }
+  }, [incidentId, dispatch])
+
+  function postUpdate() {
+    if (!updateText.trim()) return
+    const entry = {
+      id: `t${Date.now()}`,
+      type: updateType.toLowerCase(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      author: 'You',
+      content: updateText.trim(),
+    }
+    setTimeline((prev) => [entry, ...prev])
+    setUpdateText('')
+  }
   const [aiMode, setAiMode] = useState(null) // 'summary' | 'suggestion'
   const [isResolving, setIsResolving] = useState(false)
   const [reportData, setReportData] = useState({ whatHappened: '', solution: '' })
