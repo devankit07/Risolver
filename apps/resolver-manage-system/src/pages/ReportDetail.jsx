@@ -11,6 +11,7 @@ export default function ReportDetail() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { activeDetail: report, loading } = useSelector((s) => s.postmortems)
+  const currentUser = useSelector((s) => s.auth.user)
 
   useEffect(() => {
     if (id) dispatch(fetchPostmortemDetail(id))
@@ -58,7 +59,6 @@ export default function ReportDetail() {
   const svc = report.service || incRef.service || incRef.affectedService || '—'
   const isAI = report.generatedBy === 'ai'
 
-  const currentUser = useSelector((s) => s.auth.user)
   const isPrivileged = currentUser?.role?.toLowerCase() === 'admin' || currentUser?.role?.toLowerCase() === 'manager'
 
   const handleApprove = async () => {

@@ -343,15 +343,54 @@ function normalizePostmortem(pm) {
   const obj = pm.toObject ? pm.toObject() : pm
   const incidentRef = obj.incident || obj.incidentId || null
   
-  // Combine timelines if needed or fallback
-  let timeline = obj.timeline || []
-  if (timeline.length === 0 && incidentRef?.timeline) {
-    timeline = incidentRef.timeline.map(t => ({
-      time: t.time || new Date(t.timestamp || t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      event: t.event || t.message || t.action || 'Event recorded',
-      author: t.author?.name || t.author || 'System'
-    }))
-  }
+  // Normalize full lifecycle timeline for reports (created -> updates -> resolved)
+  const normalizedIncidentTimeline = Array.isArray(incidentRef?.timeline)
+    ? incidentRef.timeline.map((t) => ({
+        time: t.time || new Date(t.timestamp || t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event: t.event || t.message || t.action || t.content || 'Event recorded',
+        author: t.author?.name || t.author || 'System',
+        createdAt: t.timestamp || t.createdAt || null,
+        type: t.type || 'update',
+      }))
+    : []
+
+  const reportTimeline = Array.isArray(obj.timeline)
+    ? obj.timeline.map((t) => ({
+        time: t.time || new Date(t.timestamp || t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event: t.event || t.message || t.action || t.content || 'Event recorded',
+        author: t.author?.name || t.author || 'System',
+        createdAt: t.timestamp || t.createdAt || null,
+        type: t.type || 'update',
+      }))
+    : []
+
+  const createdEntry = incidentRef?.createdAt
+    ? [{
+        time: new Date(incidentRef.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event: 'Incident created',
+        author: obj.assignedTo?.name || obj.resolvedBy?.name || 'System',
+        createdAt: incidentRef.createdAt,
+        type: 'update',
+      }]
+    : []
+
+  const resolvedEntry = incidentRef?.resolvedAt
+    ? [{
+        time: new Date(incidentRef.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event: 'Incident resolved',
+        author: obj.resolvedBy?.name || 'System',
+        createdAt: incidentRef.resolvedAt,
+        type: 'resolved',
+      }]
+    : []
+
+  const timeline = [...createdEntry, ...normalizedIncidentTimeline, ...reportTimeline, ...resolvedEntry]
+    .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+    .filter((item, idx, arr) => {
+      if (idx === 0) return true
+      const prev = arr[idx - 1]
+      return !(prev.event === item.event && String(prev.createdAt) === String(item.createdAt))
+    })
 
   return {
     ...obj,

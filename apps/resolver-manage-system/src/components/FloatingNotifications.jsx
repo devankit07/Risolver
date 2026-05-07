@@ -29,7 +29,7 @@ export default function FloatingNotifications() {
       setActiveToasts((prev) => (prev.some((t) => String(t._id ?? '') === id) ? prev : [...prev, n]))
       setTimeout(() => {
         setActiveToasts((prev) => prev.filter((t) => String(t._id ?? '') !== id))
-      }, 6000 + idx * 800)
+      }, 12000 + idx * 1200)
     })
   }, [notificationsCache, myId]);
 
@@ -88,7 +88,7 @@ export default function FloatingNotifications() {
             <motion.div
               initial={{ width: '100%' }}
               animate={{ width: 0 }}
-              transition={{ duration: 5, ease: 'linear' }}
+              transition={{ duration: 11, ease: 'linear' }}
               className="absolute bottom-0 left-0 h-1 bg-indigo-500"
             />
           </motion.div>
