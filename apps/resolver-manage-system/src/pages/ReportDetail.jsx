@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { StatusBadge } from '@resolver/ui'
 import { fetchPostmortemDetail, clearDetail } from '../store/postmortemsSlice.js'
 import { Loader2, Sparkles, ArrowLeft, Share2, Download, ShieldAlert } from 'lucide-react'
+import api from '../services/api.js'
 
 export default function ReportDetail() {
   const { id } = useParams()

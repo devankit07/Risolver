@@ -127,6 +127,13 @@ export const sendMessage = async (req, res) => {
   const receiver = await userModel.findOne({ _id: receiverId, organizationId: orgId })
   if (!receiver) return sendResponse(res, 403, false, 'Receiver not in same org')
 
+  const myRole = (req.user.role || '').toLowerCase()
+  const targetRole = (receiver.role || '').toLowerCase()
+
+  if (targetRole === 'admin' && myRole !== 'admin' && myRole !== 'manager') {
+    return sendResponse(res, 403, false, 'Direct messaging admins is restricted for your role')
+  }
+
   const threadId = buildThreadId(myId, receiverId)
 
   const msg = await messageModel.create({
