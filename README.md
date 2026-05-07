@@ -1,92 +1,114 @@
-# Resolver | Enterprise Incident Management Platform
+# Resolver | Incident Response Platform
 
-Resolver is a comprehensive, AI-powered incident management and team coordination platform designed for high-stakes enterprise environments. It streamlines the lifecycle of an incident—from detection and triage to resolution and automated postmortem reporting.
+Resolver is a monorepo for an incident management system with:
+- a public website (`apps/website`)
+- an authenticated manage app (`apps/resolver-manage-system`)
+- a backend API (`apps/backend`)
+- shared UI components (`packages/ui`)
 
-## 🚀 Deployment Links
-- **Platform (Manage System):** [https://resolver-manage-system.vercel.app](https://resolver-manage-system.vercel.app)
-- **Marketing Website:** [https://risolver.vercel.app](https://risolver.vercel.app)
-- **Backend API:** [https://risolver.onrender.com/api](https://risolver.onrender.com/api)
+## Deployment
 
----
+- Manage app: [https://resolver-manage-system.vercel.app](https://resolver-manage-system.vercel.app)
+- Website: [https://risolver.vercel.app](https://risolver.vercel.app)
+- API: [https://risolver.onrender.com/api](https://risolver.onrender.com/api)
 
-## 🏗️ Project Architecture
+## Current Product Flow
 
-The project is structured as a monorepo containing the following main applications:
+### 1) Auth and entry flow
+- Users register/login from the website.
+- After auth, users can access the manage app workspace.
+- Admin and manager sessions are supported across website/manage flows.
 
-### 1. **Website (`/apps/website`)**
-A high-fidelity marketing landing page built with **React**, **Vite**, and **Framer Motion**. It features:
-- Responsive, modern design with custom glassmorphism effects.
-- Dynamic feature sections and comparison tables.
-- Integrated contact form connected to the backend mail service.
-- SEO optimized with meta tags and semantic HTML.
+### 2) Role behavior
+- `admin` and `manager` can invite members and manage approvals.
+- Members (responder/creator/etc.) can work incidents assigned to them.
+- Incident visibility is role-scoped in backend queries.
 
-### 2. **Resolver Manage System (`/apps/resolver-manage-system`)**
-The core dashboard for organizational team members. Key features include:
-- **Incident Dashboard:** Real-time monitoring of active and resolved incidents via **Socket.io**.
-- **AI Workspace:** A dedicated command center where members can:
-    - Get **AI Summaries** of complex incident data (text, logs, or images).
-    - Receive **AI Suggestions** for approaches and fixes using Groq (Llama 3.1).
-    - Generate automated **Postmortem Reports** with one click.
-- **Reporting System:** A structured review process for incidents, including manager approval workflows for postmortem reports.
-- **Team Management:** Real-time status tracking (online/away/offline) and notification system.
+### 3) Incident lifecycle
+- Create incident (optionally with image evidence).
+- Assign to member.
+- Work the incident in `Workspace`.
+- Use AI summary / AI fix suggestion.
+- Resolve and submit postmortem.
+- Admin/manager approve or request changes.
 
-### 3. **Backend (`/apps/backend`)**
-A robust **Node.js/Express** server powered by **MongoDB**. Highlights:
-- **AI Integration:** Seamless connection with **Groq SDK** for high-speed LLM processing.
-- **Real-time Engine:** **Socket.io** implementation for instant data synchronization across clients.
-- **Mail Service:** Automated email notifications for contact inquiries using **Nodemailer**.
-- **Authentication:** Secure JWT-based auth with organization-level isolation.
-- **Cloudinary:** Integrated for secure storage and analysis of incident-related media.
+### 4) AI in workspace
+- Endpoints:
+  - `GET /api/ai/:id/summarize`
+  - `GET /api/ai/:id/suggest-fix`
+- Groq is used when configured.
+- If Groq fails or returns malformed JSON, backend returns safe fallback summary/fix so workspace remains usable.
 
-### 4. **Shared UI Package (`/packages/ui`)**
-A reusable component library ensuring design consistency across the entire ecosystem.
+### 5) Real-time notifications
+- Socket events update incidents, statuses, messages, and broadcasts.
+- Floating toasts are shown for new notifications.
+- Message send now creates and emits notification events to the receiver.
+- Postmortem approval workflow emits notification events for pending/approved/changes.
 
----
+### 6) Topbar quick actions
+In manage app topbar:
+- `+` -> open incidents
+- `Filter` -> open incidents list view
+- `Download` -> open reports
+- `Bell` -> open messages
+- Bell dot uses unread notification count from backend/user notifications cache.
 
-## 🛠️ The Resolver Workflow
+## Monorepo Structure
 
-1. **Incident Creation:** An incident is reported (via API, manual entry, or image upload).
-2. **Assignment:** Admins or Managers assign the incident to a team member.
-3. **Investigation:** The assignee uses the **AI Workspace** to analyze the problem.
-4. **Resolution:** The member applies a fix (either manual or AI-suggested) and marks the incident as resolved.
-5. **Postmortem:** The system prompts the generation of a postmortem report.
-6. **Review & Publication:** A manager reviews the AI-generated or manual report. Upon approval, it is published to the organization's public report page.
+- `apps/website` - marketing site + auth entry points
+- `apps/resolver-manage-system` - internal incident management dashboard
+- `apps/backend` - Express + MongoDB + Socket.io + AI integrations
+- `packages/ui` - shared React UI components
 
----
+## Tech Stack
 
-## 🛠️ Technology Stack
-- **Frontend:** React 19, Vite, Tailwind CSS, Framer Motion, Lucide React, Redux Toolkit.
-- **Backend:** Express, MongoDB (Mongoose), Socket.io, groq-sdk, Cloudinary, Nodemailer.
-- **Infrastructure:** Monorepo architecture, Vercel (Frontend), Render (Backend).
+- Frontend: React, Vite, Redux Toolkit, Tailwind CSS, Framer Motion
+- Backend: Node.js, Express, Mongoose, Socket.io, groq-sdk, Cloudinary, Nodemailer
+- Infra: Vercel (frontends), Render (API)
 
----
+## Local Development
 
-## 🔧 Installation & Local Development
+### Prerequisites
+- Node.js 18+
+- pnpm 9+
+- MongoDB
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   ```
+### Install
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+pnpm install
+```
 
-3. **Environment Setup:**
-   Create `.env` files in `apps/backend`, `apps/website`, and `apps/resolver-manage-system` based on the provided configuration samples.
+### Environment
 
-4. **Run Development Servers:**
-   ```bash
-   # In the root or individual app folders
-   npm run dev
-   ```
+Create `.env` files for:
+- `apps/backend`
+- `apps/website`
+- `apps/resolver-manage-system`
 
-5. **Build for Production:**
-   ```bash
-   npm run build
-   ```
+Important backend vars include:
+- `MONGO_URI`
+- `JWT_SECRET`
+- `GROQ_API_KEY` (required for live AI responses; fallback logic still keeps workspace functional)
 
----
+### Run
 
-*Developed with a focus on speed, reliability, and AI-driven intelligence.*
+From repo root:
+
+```bash
+pnpm run dev
+```
+
+### Build
+
+Root build currently runs website build:
+
+```bash
+pnpm run build
+```
+
+To run backend in dev only:
+
+```bash
+pnpm run dev:backend
+```
