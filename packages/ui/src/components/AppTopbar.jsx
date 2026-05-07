@@ -13,6 +13,9 @@ import { Search, Plus, Filter, Download, Bell, ChevronRight } from 'lucide-react
  *   breadcrumb?: string[],
  *   onSearch?: (v: string) => void,
  *   onCreateIncident?: () => void,
+ *   onFilter?: () => void,
+ *   onExport?: () => void,
+ *   onNotifications?: () => void,
  *   notificationCount?: number,
  *   searchPlaceholder?: string,
  * }} props
@@ -26,6 +29,9 @@ export function AppTopbar({
   breadcrumb = [],
   onSearch,
   onCreateIncident,
+  onFilter,
+  onExport,
+  onNotifications,
   notificationCount = 0,
   searchPlaceholder = 'Search incidents…',
 }) {
@@ -119,13 +125,13 @@ export function AppTopbar({
               <TopbarAction onClick={onCreateIncident} label="New incident" accent>
                 <Plus className="h-5 w-5" strokeWidth={2} />
               </TopbarAction>
-              <TopbarAction label="Filter">
+              <TopbarAction label="Filter" onClick={onFilter}>
                 <Filter className="h-5 w-5 text-slate-600" strokeWidth={2} />
               </TopbarAction>
-              <TopbarAction label="Export">
+              <TopbarAction label="Export" onClick={onExport}>
                 <Download className="h-5 w-5 text-slate-600" strokeWidth={2} />
               </TopbarAction>
-              <TopbarAction label="Notifications" className="relative">
+              <TopbarAction label="Notifications" onClick={onNotifications} className="relative">
                 <Bell className="h-5 w-5 text-slate-600" strokeWidth={2} />
                 {notificationCount > 0 && (
                   <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />

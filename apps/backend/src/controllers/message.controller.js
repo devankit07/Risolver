@@ -1,5 +1,6 @@
 import messageModel from '../models/message.model.js'
 import userModel from '../models/user.model.js'
+import notificationModel from '../models/notification.model.js'
 import { sendResponse } from '../utils/response.js'
 
 function buildThreadId(a, b) {
@@ -147,10 +148,25 @@ export const sendMessage = async (req, res) => {
   const populated = await msg.populate('sender', 'name role')
 
   const io = req.app.get('io')
+  const notification = await notificationModel.create({
+    userId: receiverId,
+    organizationId: orgId,
+    senderId: myId,
+    type: 'message_received',
+    title: `New message from ${req.user.name}`,
+    body: content.trim().slice(0, 140),
+  })
+
   if (io) {
     io.to(`user:${String(receiverId)}`).emit('message:new', {
       message: populated,
       threadId,
+    })
+    io.to(`user:${String(receiverId)}`).emit('notification:new', {
+      ...notification.toObject(),
+      _id: String(notification._id),
+      userId: String(notification.userId),
+      senderId: String(notification.senderId),
     })
     io.to(`user:${String(myId)}`).emit('message:sent', {
       message: populated,

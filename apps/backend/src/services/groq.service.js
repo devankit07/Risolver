@@ -14,6 +14,73 @@ function getGroq() {
   return groqClient;
 }
 
+function parseJsonFromModel(rawContent) {
+  if (!rawContent || typeof rawContent !== "string") return null;
+  const trimmed = rawContent.trim();
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // continue
+  }
+
+  const fenced = trimmed
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  try {
+    return JSON.parse(fenced);
+  } catch {
+    // continue
+  }
+
+  const firstBrace = fenced.indexOf("{");
+  const lastBrace = fenced.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = fenced.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function buildFallbackSummary(incident) {
+  const description = (incident?.description || "").trim();
+  const points = description
+    .split(/[\n\.]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+
+  return {
+    summary:
+      points.length > 0
+        ? points
+        : [
+            `Incident detected in ${incident?.service || "the affected service"}.`,
+            `Severity marked as ${incident?.severity || "unknown"}.`,
+            "Investigation and mitigation steps are required to restore normal behavior.",
+          ],
+  };
+}
+
+function buildFallbackFix(incident) {
+  return {
+    approach: `Stabilize ${incident?.service || "the service"}, identify the failing component, and deploy a safe rollback or targeted fix.`,
+    steps: [
+      "Collect logs, traces, and recent deploy/config changes around the incident window.",
+      "Isolate the root cause and apply the smallest safe mitigation first.",
+      "Validate recovery with health checks and user-path smoke tests.",
+      "Document the final fix and preventive follow-up actions.",
+    ],
+  };
+}
+
 export const generateIncidentSuggestion = async (userInput) => {
   const groq = getGroq();
   const response = await groq.chat.completions.create({
@@ -97,47 +164,70 @@ Description: ${description}`,
 };
 
 export const generateIncidentSummary = async (incident) => {
-  const groq = getGroq();
-  const response = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
-    messages: [
-      {
-        role: "system",
-        content: "You are an incident management assistant. Summarize the incident in a few clear bullet points. Return pure JSON with a 'summary' field (array of strings)."
-      },
-      {
-        role: "user",
-        content: `Summarize this incident:
+  try {
+    const groq = getGroq();
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an incident management assistant. Summarize the incident in a few clear bullet points. Return pure JSON with a 'summary' field (array of strings).",
+        },
+        {
+          role: "user",
+          content: `Summarize this incident:
 Title: ${incident.title}
 Description: ${incident.description}
 Severity: ${incident.severity}
-Service: ${incident.service}`
-      }
-    ],
-    temperature: 0,
-  });
-  return JSON.parse(response.choices[0].message.content);
+Service: ${incident.service}`,
+        },
+      ],
+      temperature: 0,
+    });
+
+    const parsed = parseJsonFromModel(response.choices?.[0]?.message?.content);
+    if (!parsed || !Array.isArray(parsed.summary)) {
+      return buildFallbackSummary(incident);
+    }
+    return { summary: parsed.summary.filter(Boolean) };
+  } catch {
+    return buildFallbackSummary(incident);
+  }
 };
 
 export const generateIncidentFixSuggestion = async (incident) => {
-  const groq = getGroq();
-  const response = await groq.chat.completions.create({
-    model: "llama-3.1-8b-instant",
-    messages: [
-      {
-        role: "system",
-        content: "You are a senior engineer. Suggest an approach to fix this incident. Return pure JSON with 'approach' and 'steps' (array) fields."
-      },
-      {
-        role: "user",
-        content: `Incident: ${incident.title}
+  try {
+    const groq = getGroq();
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior engineer. Suggest an approach to fix this incident. Return pure JSON with 'approach' and 'steps' (array) fields.",
+        },
+        {
+          role: "user",
+          content: `Incident: ${incident.title}
 Description: ${incident.description}
-Service: ${incident.service}`
-      }
-    ],
-    temperature: 0,
-  });
-  return JSON.parse(response.choices[0].message.content);
+Service: ${incident.service}`,
+        },
+      ],
+      temperature: 0,
+    });
+
+    const parsed = parseJsonFromModel(response.choices?.[0]?.message?.content);
+    if (!parsed || typeof parsed.approach !== "string") {
+      return buildFallbackFix(incident);
+    }
+    return {
+      approach: parsed.approach.trim(),
+      steps: Array.isArray(parsed.steps) ? parsed.steps.filter(Boolean) : [],
+    };
+  } catch {
+    return buildFallbackFix(incident);
+  }
 };
 
 export const generatePostmortem = async (incident, timeline, solver) => {
@@ -175,4 +265,4 @@ JSON structure:
     });
 
     return JSON.parse(response.choices[0].message.content);
-}
+}

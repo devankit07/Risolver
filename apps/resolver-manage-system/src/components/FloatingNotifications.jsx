@@ -15,28 +15,22 @@ export default function FloatingNotifications() {
 
   useEffect(() => {
     const list = notificationsCache[myId] ?? [];
-    if (list.length > 0) {
-      const latest = list[0];
-      
-      // Only show if it's new, not already shown this session, and recent
-      const latestId = String(latest._id ?? '');
-      const isRecent = new Date(latest.createdAt).getTime() > Date.now() - 15000;
-      const alreadyShown = latestId ? shownIds.current.has(latestId) : false;
+    if (list.length === 0) return
 
-      if (!latest.isRead && isRecent && !alreadyShown && latestId) {
-        shownIds.current.add(latestId);
-        
-        setActiveToasts((prev) => {
-          if (prev.some(t => String(t._id ?? '') === latestId)) return prev;
-          return [...prev, latest];
-        });
+    const recentUnseen = list.filter((n) => {
+      const id = String(n._id ?? '')
+      if (!id || n.isRead || shownIds.current.has(id)) return false
+      return new Date(n.createdAt).getTime() > Date.now() - 20000
+    }).slice(0, 3)
 
-        // Auto remove after 6 seconds
-        setTimeout(() => {
-          setActiveToasts((prev) => prev.filter(t => String(t._id ?? '') !== latestId));
-        }, 6000);
-      }
-    }
+    recentUnseen.forEach((n, idx) => {
+      const id = String(n._id)
+      shownIds.current.add(id)
+      setActiveToasts((prev) => (prev.some((t) => String(t._id ?? '') === id) ? prev : [...prev, n]))
+      setTimeout(() => {
+        setActiveToasts((prev) => prev.filter((t) => String(t._id ?? '') !== id))
+      }, 6000 + idx * 800)
+    })
   }, [notificationsCache, myId]);
 
 
@@ -62,11 +56,13 @@ export default function FloatingNotifications() {
               <div className="flex-1 min-w-0">
                 <h4 className="text-[14px] font-bold text-[#1e293b] truncate">{n.title}</h4>
                 <p className="mt-0.5 text-[12px] text-[#64748b] line-clamp-2">{n.body}</p>
-                {(n.incidentId || n.type?.startsWith('report')) && (
+                {(n.incidentId || n.type?.startsWith('report') || n.type === 'message_received' || n.senderId) && (
                   <button
                     onClick={() => {
                       if (n.postmortemId) {
                         navigate(`/reports/${n.postmortemId}`);
+                      } else if (n.type === 'message_received' && n.senderId) {
+                        navigate(`/messages?tab=threads&user=${n.senderId}`);
                       } else if (n.type === 'report_submitted' || n.type === 'report_pending') {
                         navigate('/reports');
                       } else if (n.incidentId) {
@@ -76,7 +72,7 @@ export default function FloatingNotifications() {
                     }}
                     className="mt-3 flex items-center gap-1.5 text-[12px] font-bold text-indigo-600 hover:text-indigo-800"
                   >
-                    {n.type?.startsWith('report') ? 'Review Report' : 'Open Workspace'} <ExternalLink size={12} />
+                    {n.type?.startsWith('report') ? 'Review Report' : n.type === 'message_received' ? 'Open Chat' : 'Open Workspace'} <ExternalLink size={12} />
                   </button>
                 )}
               </div>

@@ -77,9 +77,10 @@ export default function Workspace() {
     try {
       setLoadingSummary(true)
       const { data } = await api.get(`/ai/${incidentId}/summarize`)
-      setAiSummary(data.summary)
+      const summary = data?.data?.summary ?? []
+      setAiSummary(summary)
       setAiMode('summary')
-      setReportData(prev => ({ ...prev, whatHappened: data.summary?.join('\n') || '' }))
+      setReportData(prev => ({ ...prev, whatHappened: summary.join('\n') || '' }))
     } catch (err) {
       console.error('Failed to fetch summary', err)
     } finally {
@@ -91,14 +92,15 @@ export default function Workspace() {
     try {
       setLoadingSuggestion(true)
       const { data } = await api.get(`/ai/${incidentId}/suggest-fix`)
-      setAiSuggestion(data)
+      const suggestion = data?.data ?? {}
+      setAiSuggestion(suggestion)
       setAiMode('suggestion')
       // Pre-fill both for suggestion mode
       setReportData({
         whatHappened: aiSummary?.join('\n') || '',
-        solution: data.approach || ''
+        solution: suggestion.approach || ''
       })
-      if (!aiSummary) fetchSummary()
+      if (!aiSummary) await fetchSummary()
     } catch (err) {
       console.error('Failed to fetch suggestion', err)
     } finally {

@@ -127,6 +127,7 @@ export default function Messages() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') === 'broadcast' ? 'broadcast' : 'threads'
+  const selectedUserFromQuery = searchParams.get('user')
 
   const {
     threads, activeThread, activeThreadUserId,
@@ -206,6 +207,11 @@ export default function Messages() {
     dispatch(fetchThread(String(otherUserId)))
     setDraft('')
   }, [dispatch])
+
+  useEffect(() => {
+    if (tab !== 'threads' || !selectedUserFromQuery) return
+    openThread(selectedUserFromQuery)
+  }, [tab, selectedUserFromQuery, openThread])
 
   const openBroadcast = useCallback((b) => {
     setSelectedBroadcastId(String(b._id))

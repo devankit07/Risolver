@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Outlet, useLocation, NavLink, Navigate } from 'react-router-dom'
+import { Outlet, useLocation, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { AppSidebar, AppTopbar, MotionPage } from '@resolver/ui'
 import { LayoutDashboard, MessageSquare, Users, FileText, Briefcase } from 'lucide-react'
 import { clearAuth } from '../store/authSlice.js'
+import { fetchUserNotifications } from '../store/teamSlice.js'
 import FloatingNotifications from '../components/FloatingNotifications.jsx'
 import api from '../services/api.js'
 
@@ -57,6 +58,7 @@ function metaForPath(pathname) {
 }
 
 export default function AppLayout() {
+  const navigate = useNavigate()
   const { pathname } = useLocation()
   const dispatch = useDispatch()
   const user = useSelector((s) => s.auth.user)
@@ -85,6 +87,14 @@ export default function AppLayout() {
   const workspaceTo = firstWorkspaceId ? `/workspace/${firstWorkspaceId}` : '/workspace'
 
   const [incidentsListSearch, setIncidentsListSearch] = useState('')
+  const myId = String(user?._id ?? user?.id ?? '')
+  const myNotifications = useSelector((s) => s.team.notificationsCache?.[myId] ?? [])
+  const unreadNotificationCount = myNotifications.filter((n) => !n.isRead).length
+
+  useEffect(() => {
+    if (!myId) return
+    dispatch(fetchUserNotifications(myId))
+  }, [dispatch, myId])
   useEffect(() => {
     if (!pathname.startsWith('/incidents/active')) setIncidentsListSearch('')
   }, [pathname])
@@ -141,9 +151,13 @@ export default function AppLayout() {
             welcomeOrganizationName={user?.organizationName}
             subtitle={isDashboard ? undefined : meta.subtitle}
             breadcrumb={isDashboard ? [] : meta.breadcrumb}
-            notificationCount={3}
+            notificationCount={unreadNotificationCount}
             searchPlaceholder="Search incidents…"
             onSearch={isActiveIncidentsPage ? setIncidentsListSearch : undefined}
+            onCreateIncident={() => navigate('/incidents/active')}
+            onFilter={() => navigate('/incidents/active')}
+            onExport={() => navigate('/reports')}
+            onNotifications={() => navigate('/messages?tab=threads')}
           />
           <MotionPage>
             <Outlet context={{ incidentsListSearch }} />
